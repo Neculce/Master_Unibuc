@@ -3,13 +3,14 @@ oradata/
 # scripts/
 
 # TeX compilation files
-docs/*.aux
-docs/*.log
-docs/*.out
-docs/*.toc
-docs/*.fls
-docs/*.fdb_latexmk
-docs/*.synctex.gz
-docs/*.synctex(busy).gz
-docs/*.synctex.gz(busy)
-docs/*.synctex(busy).gz(busy)
+docs/analysis/*.aux
+docs/analysis/*.log
+docs/analysis/*.out
+docs/analysis/*.toc
+docs/analysis/*.fls
+docs/analysis/*.pdf
+docs/analysis/*.fdb_latexmk
+docs/analysis/*.synctex.gz
+docs/analysis/*.synctex(busy).gz
+docs/analysis/*.synctex.gz(busy)
+docs/analysis/*.synctex(busy).gz(busy)

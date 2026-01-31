@@ -1,4 +1,4 @@
--- Rulare ca SYSTEM: obiecte DW în schema TickLy.
+ALTER SESSION SET CONTAINER = orclpdb1;
 WHENEVER SQLERROR EXIT FAILURE;
 
 create table TickLy.dim_client (

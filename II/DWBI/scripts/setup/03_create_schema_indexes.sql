@@ -1,4 +1,4 @@
--- Rulare ca SYSTEM: indecșii se creează în schema TickLy.
+ALTER SESSION SET CONTAINER = orclpdb1;
 WHENEVER SQLERROR EXIT FAILURE;
 
 CREATE INDEX idx_ticket_client ON TickLy.ticket(client_id);

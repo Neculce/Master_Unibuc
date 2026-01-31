@@ -1,4 +1,4 @@
--- Rulare ca SYSTEM: inserări în schema TickLy.
+ALTER SESSION SET CONTAINER = orclpdb1;
 WHENEVER SQLERROR EXIT FAILURE ROLLBACK;
 
 -- Prioritate (nivel 1-5) --

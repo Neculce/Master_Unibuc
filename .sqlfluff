@@ -1,0 +1,6 @@
+[sqlfluff]
+dialect = oracle
+templater = raw
+
+[sqlfluff:core]
+ignore = parsing

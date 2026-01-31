@@ -2,12 +2,12 @@ name: Build DW&BI Analysis Report
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
     paths:
       - 'II/DWBI/docs/analysis/**'
       - '.github/workflows/analysis.yml'
   pull_request:
-    branches: [main, master]
+    branches: [main]
     paths:
       - 'II/DWBI/docs/analysis/**'
       - '.github/workflows/analysis.yml'
@@ -19,6 +19,9 @@ defaults:
 jobs:
   build-analysis-report:
     runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && contains(github.event.head_commit.message, 'DWBI')) ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.title, 'DWBI'))
     permissions:
       contents: write
     steps:

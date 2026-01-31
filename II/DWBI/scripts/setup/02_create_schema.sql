@@ -1,3 +1,5 @@
+WHENEVER SQLERROR EXIT FAILURE;
+
 CREATE TABLE client (
     client_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email VARCHAR2(100) NOT NULL UNIQUE,
@@ -249,14 +251,3 @@ CREATE TABLE ticket_tag (
     CONSTRAINT fk_ttag_ticket FOREIGN KEY (ticket_id) REFERENCES ticket(ticket_id) ON DELETE CASCADE,
     CONSTRAINT fk_ttag_tag FOREIGN KEY (tag_id) REFERENCES tag(tag_id) ON DELETE CASCADE
 );
-
-CREATE INDEX idx_ticket_client ON ticket(client_id);
-CREATE INDEX idx_ticket_status ON ticket(status_id);
-CREATE INDEX idx_ticket_departament ON ticket(departament_id);
-CREATE INDEX idx_ticket_categorie ON ticket(categorie_id);
-CREATE INDEX idx_comment_client_ticket ON comment_client(ticket_id);
-CREATE INDEX idx_comment_client_client ON comment_client(client_id);
-CREATE INDEX idx_comment_agent_ticket ON comment_agent(ticket_id);
-CREATE INDEX idx_comment_agent_agent ON comment_agent(agent_id);
-CREATE INDEX idx_atasament_ticket ON atasament(ticket_id);
-CREATE INDEX idx_adresa_client ON adresa(client_id);

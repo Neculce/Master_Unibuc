@@ -14,3 +14,5 @@ docs/analysis/*.synctex.gz
 docs/analysis/*.synctex(busy).gz
 docs/analysis/*.synctex.gz(busy)
 docs/analysis/*.synctex(busy).gz(busy)
+
+.dwbi_venv/

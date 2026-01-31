@@ -22,6 +22,7 @@ services:
       - ./oradata:/opt/oracle/oradata:rw
       - ./scripts/startup:/opt/oracle/scripts/startup:rw
       - ./scripts/setup:/opt/oracle/scripts/setup:rw
+      - ./scripts/etl:/opt/oracle/scripts/etl:ro
 
     shm_size: "2g"
     ulimits:

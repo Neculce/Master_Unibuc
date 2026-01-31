@@ -1,6 +1,15 @@
 ALTER SESSION SET CONTAINER = orclpdb1;
 WHENEVER SQLERROR EXIT FAILURE;
 
+INSERT INTO TickLy.fact_ticket (
+    ticket_id, client_key, agent_key, departament_key, categorie_key,
+    date_creare_key, date_rezolvare_key, date_inchidere_key,
+    status_id, status_nume, status_este_final, status_ordine,
+    prioritate_id, prioritate_nivel, prioritate_nume, prioritate_timp_raspuns_ore,
+    numar_ticketuri, timp_rezolvare_ore, timp_raspuns_ore, timp_rezolvare_minute,
+    rating_feedback, numar_comentarii, numar_comentarii_client,
+    numar_comentarii_agent, numar_atasamente, cost_estimativ
+)
 WITH tap AS (
     SELECT ticket_id, agent_id,
            ROW_NUMBER() OVER (PARTITION BY ticket_id
@@ -22,15 +31,6 @@ ticket_agent_resolved AS (
     LEFT JOIN ticket_agent_prim tap ON tap.ticket_id = t.ticket_id
     LEFT JOIN TickLy.solutie sol ON sol.ticket_id = t.ticket_id
     LEFT JOIN ta_any ta ON ta.ticket_id = t.ticket_id
-)
-INSERT INTO TickLy.fact_ticket (
-    ticket_id, client_key, agent_key, departament_key, categorie_key,
-    date_creare_key, date_rezolvare_key, date_inchidere_key,
-    status_id, status_nume, status_este_final, status_ordine,
-    prioritate_id, prioritate_nivel, prioritate_nume, prioritate_timp_raspuns_ore,
-    numar_ticketuri, timp_rezolvare_ore, timp_raspuns_ore, timp_rezolvare_minute,
-    rating_feedback, numar_comentarii, numar_comentarii_client,
-    numar_comentarii_agent, numar_atasamente, cost_estimativ
 )
 SELECT
     t.ticket_id,

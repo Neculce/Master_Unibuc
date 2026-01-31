@@ -1,4 +1,3 @@
--- Rulare ca SYSTEM: obiectele se creează în schema TickLy (CREATE TABLE TickLy.xxx).
 WHENEVER SQLERROR EXIT FAILURE;
 
 CREATE TABLE TickLy.client (

@@ -1,3 +1,5 @@
+WHENEVER SQLERROR EXIT FAILURE;
+
 create table dim_client (
    client_key         number generated always as identity primary key,
    client_id          number not null,

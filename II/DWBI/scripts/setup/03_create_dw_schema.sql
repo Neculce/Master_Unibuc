@@ -196,32 +196,17 @@ create index idx_fact_prioritate on
       prioritate_id
    );
 
--- this will fail because we already have an index on ticket_id because it's UNIQUE (CONSTRAINT)
--- CREATE INDEX idx_fact_ticket_id ON fact_ticket(ticket_id);
-
 create index idx_dim_client_id on
    dim_client (
       client_id
-   );
-create index idx_dim_client_current on
-   dim_client (
-      is_current
    );
 create index idx_dim_agent_id on
    dim_agent (
       agent_id
    );
-create index idx_dim_agent_current on
-   dim_agent (
-      is_current
-   );
 create index idx_dim_departament_id on
    dim_departament (
       departament_id
-   );
-create index idx_dim_departament_current on
-   dim_departament (
-      is_current
    );
 create index idx_dim_time_an on
    dim_time (
@@ -267,60 +252,19 @@ create bitmap index bmp_dim_client_active on
    dim_client (
       is_active
    );
-
--- this will throw an error because you already created an index for the same table, for the same column
 create bitmap index bmp_dim_client_current on
    dim_client (
       is_current
    );
 
--- execute the following to get the index name, drop it and then create the bitmap index
-
--- SELECT i.index_name, i.index_type, i.uniqueness
--- FROM user_indexes i
--- JOIN user_ind_columns c ON c.index_name = i.index_name
--- WHERE c.table_name = 'DIM_CLIENT'
---   AND c.column_name = 'IS_CURRENT'
--- ORDER BY i.index_name;
-
--- drop index IDX_DIM_CLIENT_CURRENT;
-
--- this will produce the same error as before:
 create bitmap index bmp_dim_agent_active on
    dim_agent (
       is_active
    );
-
--- execute this: 
-
--- SELECT i.index_name, i.index_type, i.uniqueness
--- FROM user_indexes i
--- JOIN user_ind_columns c
---   ON c.index_name = i.index_name
--- WHERE c.table_name = 'DIM_AGENT'
---   AND c.column_name = 'IS_CURRENT';
-
--- drop index IDX_DIM_AGENT_CURRENT;
-
--- and then create the index
-
--- same here too:
 create bitmap index bmp_dim_agent_current on
    dim_agent (
       is_current
    );
-
--- SELECT i.index_name,
---        i.index_type,
---        i.uniqueness
--- FROM user_indexes i
--- JOIN user_ind_columns c
---   ON c.index_name = i.index_name
--- WHERE c.table_name = 'DIM_DEPARTAMENT'
---   AND c.column_name = 'IS_CURRENT';  
-
--- drop index IDX_DIM_DEPARTAMENT_CURRENT;
--- and don't forget to create the index again
 
 create bitmap index bmp_dim_departament_current on
    dim_departament (

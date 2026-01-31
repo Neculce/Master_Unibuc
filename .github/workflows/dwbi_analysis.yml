@@ -5,12 +5,12 @@ on:
     branches: [main]
     paths:
       - 'II/DWBI/docs/analysis/**'
-      - '.github/workflows/analysis.yml'
+      - '.github/workflows/dwbi_analysis.yml'
   pull_request:
     branches: [main]
     paths:
       - 'II/DWBI/docs/analysis/**'
-      - '.github/workflows/analysis.yml'
+      - '.github/workflows/dwbi_analysis.yml'
 
 defaults:
   run:

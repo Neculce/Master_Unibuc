@@ -1,16 +1,16 @@
-name: Test Oracle scripts
+name: Lint Oracle scripts
 
 on:
   push:
     branches: [main]
     paths:
       - 'II/DWBI/scripts/**'
-      - '.github/workflows/dwbi-scripts.yml'
+      - '.github/workflows/dwbi_sql_lint.yml'
   pull_request:
     branches: [main]
     paths:
       - 'II/DWBI/scripts/**'
-      - '.github/workflows/dwbi-scripts.yml'
+      - '.github/workflows/dwbi_sql_lint.yml'
 
 jobs:
   lint-sql:

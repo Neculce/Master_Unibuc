@@ -1,16 +1,16 @@
-name: Lint Oracle scripts
+name: Test Oracle scripts
 
 on:
   push:
     branches: [main]
     paths:
       - 'II/DWBI/scripts/**'
-      - '.github/workflows/dwbi_sql_lint.yml'
+      - '.github/workflows/II_dwbi/dwbi-scripts.yml'
   pull_request:
     branches: [main]
     paths:
       - 'II/DWBI/scripts/**'
-      - '.github/workflows/dwbi_sql_lint.yml'
+      - '.github/workflows/II_dwbi/dwbi-scripts.yml'
 
 jobs:
   lint-sql:
@@ -30,4 +30,4 @@ jobs:
         run: pip install sqlfluff
 
       - name: Lint SQL scripts
-        run: sqlfluff lint --config II/DWBI/.sqlfluff II/DWBI/scripts
+        run: sqlfluff lint II/DWBI/scripts

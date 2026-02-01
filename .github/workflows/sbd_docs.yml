@@ -1,0 +1,62 @@
+name: Build SBD Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'II/SBD/Report/docs/**'
+      - 'II/SBD/Application/docs/**'
+      - '.github/workflows/sbd_docs.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'II/SBD/Report/docs/**'
+      - 'II/SBD/Application/docs/**'
+      - '.github/workflows/sbd_docs.yml'
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && contains(github.event.head_commit.message, 'SBD')) ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.title, 'SBD'))
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build SBD Report docs (XeLaTeX)
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: II/SBD/Report/docs
+          latexmk_use_lualatex: false
+          latexmk_use_xelatex: true
+          latexmk_shell_escape: false
+          compiler: latexmk
+
+      - name: Build SBD Application docs (XeLaTeX)
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: II/SBD/Application/docs
+          latexmk_use_lualatex: false
+          latexmk_use_xelatex: true
+          latexmk_shell_escape: false
+          compiler: latexmk
+
+      - name: Publish SBD docs as release
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp II/SBD/Report/docs/main.pdf II/SBD/Report/docs/SBD_Report.pdf
+          cp II/SBD/Application/docs/main.pdf II/SBD/Application/docs/SBD_Application.pdf
+          gh release delete sbd-docs-latest --yes 2>/dev/null || true
+          gh release create sbd-docs-latest \
+            --title "SBD Docs (latest)" \
+            --notes "Report + Application. Built from ${{ github.ref_name }} at ${{ github.sha }}." \
+            II/SBD/Report/docs/SBD_Report.pdf \
+            II/SBD/Application/docs/SBD_Application.pdf

@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build SBD Report docs (XeLaTeX)
-        uses: xu-cheng/latex-action@v3
+        uses: xu-cheng/latex-action@v4
         with:
           root_file: main.tex
           working_directory: II/SBD/Report/docs
@@ -38,7 +38,7 @@ jobs:
           compiler: latexmk
 
       - name: Build SBD Application docs (XeLaTeX)
-        uses: xu-cheng/latex-action@v3
+        uses: xu-cheng/latex-action@v4
         with:
           root_file: main.tex
           working_directory: II/SBD/Application/docs

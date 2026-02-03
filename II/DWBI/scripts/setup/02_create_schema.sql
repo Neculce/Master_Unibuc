@@ -4,6 +4,7 @@ WHENEVER SQLERROR EXIT FAILURE;
 CREATE TABLE TickLy.client (
     client_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email VARCHAR2(100) NOT NULL UNIQUE,
+    password_hash VARCHAR2(255),
     phone VARCHAR2(20),
     registration_date DATE DEFAULT SYSDATE NOT NULL,
     client_type CHAR(1) NOT NULL CHECK (client_type IN ('F', 'J')),
@@ -48,6 +49,7 @@ CREATE TABLE TickLy.agent (
     nume VARCHAR2(50) NOT NULL,
     prenume VARCHAR2(50) NOT NULL,
     email VARCHAR2(100) NOT NULL UNIQUE,
+    password_hash VARCHAR2(255),
     telefon VARCHAR2(20),
     hire_date DATE DEFAULT SYSDATE NOT NULL,
     is_active CHAR(1) DEFAULT 'Y' CHECK (is_active IN ('Y', 'N'))
@@ -119,6 +121,7 @@ CREATE TABLE TickLy.ticket (
     titlu VARCHAR2(200) NOT NULL,
     descriere CLOB,
     data_creare DATE DEFAULT SYSDATE NOT NULL,
+    data_ultima_actualizare DATE DEFAULT SYSDATE,
     data_rezolvare DATE,
     data_inchidere DATE,
     timp_rezolvare_ore NUMBER,
@@ -135,7 +138,6 @@ CREATE TABLE TickLy.comment_client (
     client_id NUMBER NOT NULL,
     content CLOB NOT NULL,
     created_date DATE DEFAULT SYSDATE NOT NULL,
-    is_internal CHAR(1) DEFAULT 'N' CHECK (is_internal IN ('Y', 'N')),
     CONSTRAINT fk_comment_client_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket(ticket_id) ON DELETE CASCADE,
     CONSTRAINT fk_comment_client_client FOREIGN KEY (client_id) REFERENCES TickLy.client(client_id) ON DELETE CASCADE
 );

@@ -18,9 +18,9 @@ export async function POST(
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  let body: { content?: string };
+  let body: { content?: string; is_internal?: boolean };
   try {
-    body = (await request.json()) as { content?: string };
+    body = (await request.json()) as { content?: string; is_internal?: boolean };
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -28,6 +28,7 @@ export async function POST(
   if (!content) {
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
   }
+  const isInternal = session.role === "agent" && body.is_internal === true;
 
   try {
     const result = await runQuery(async (conn) => {
@@ -49,8 +50,8 @@ export async function POST(
       } else {
         if (session.role !== "agent") return { error: "forbidden" as const };
         await conn.execute(
-          `INSERT INTO TickLy.comment_agent (ticket_id, agent_id, content, is_internal) VALUES (:ticket_id, :agent_id, :content, 'N')`,
-          { ticket_id: ticketId, agent_id: session.id, content }
+          `INSERT INTO TickLy.comment_agent (ticket_id, agent_id, content, is_internal) VALUES (:ticket_id, :agent_id, :content, :is_internal)`,
+          { ticket_id: ticketId, agent_id: session.id, content, is_internal: isInternal ? "Y" : "N" }
         );
       }
       return { ok: true };

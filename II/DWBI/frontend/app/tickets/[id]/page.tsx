@@ -32,6 +32,7 @@ type TicketDetail = {
     created_date: string;
     source: string;
     author_name: string;
+    is_internal?: boolean;
   }[];
   attachments: {
     atasament_id: number;
@@ -135,6 +136,7 @@ function TicketView({
   const [saving, setSaving] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [commentSending, setCommentSending] = useState(false);
+  const [commentInternal, setCommentInternal] = useState(false);
   const [editField, setEditField] = useState<EditField>(null);
   const ticketId = ticket.ticket_id;
 
@@ -180,7 +182,7 @@ function TicketView({
         const res = await fetch("/api/tickets/" + ticketId + "/comments", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: text }),
+          body: JSON.stringify({ content: text, is_internal: isAgent ? commentInternal : undefined }),
         });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
@@ -195,7 +197,7 @@ function TicketView({
         setCommentSending(false);
       }
     },
-    [ticketId, commentText, commentSending, onRefresh]
+    [ticketId, commentText, commentSending, commentInternal, isAgent, onRefresh]
   );
 
   return (
@@ -247,10 +249,13 @@ function TicketView({
                       <div className={"shrink-0 size-10 rounded-full flex items-center justify-center text-xs font-bold " + (c.source === "agent" ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-600")}>
                         {c.source === "agent" ? "A" : "C"}
                       </div>
-                      <div className="min-w-0 flex-1 rounded-xl bg-gray-50/80 px-4 py-3 border border-gray-100">
+                      <div className={"min-w-0 flex-1 rounded-xl px-4 py-3 border " + (c.is_internal ? "bg-amber-50/80 border-amber-200/60" : "bg-gray-50/80 border-gray-100")}>
                         <div className="flex items-baseline gap-2 flex-wrap">
                           <span className="text-sm font-medium text-[#0e141b]">{c.author_name}</span>
                           <span className="text-xs text-gray-500">{c.source === "agent" ? "Agent" : "Client"}</span>
+                          {c.is_internal && (
+                            <span className="text-xs font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">Intern</span>
+                          )}
                           <span className="text-xs text-gray-400 tabular-nums">{formatDate(c.created_date)}</span>
                         </div>
                         <p className="text-sm text-gray-700 mt-1.5 whitespace-pre-wrap leading-relaxed">{c.content}</p>
@@ -268,6 +273,17 @@ function TicketView({
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50/60 text-[#0e141b] placeholder:text-gray-400 focus:bg-white focus:border-primary/40 focus:ring-2 focus:ring-primary/10 resize-y min-h-[80px]"
                   disabled={commentSending}
                 />
+                {isAgent && (
+                  <label className="mt-3 flex items-center gap-2 cursor-pointer w-fit">
+                    <input
+                      type="checkbox"
+                      checked={commentInternal}
+                      onChange={(e) => setCommentInternal(e.target.checked)}
+                      className="rounded border-gray-300 text-primary focus:ring-primary/40"
+                    />
+                    <span className="text-sm text-gray-600">Comentariu intern (nu este vizibil pentru client)</span>
+                  </label>
+                )}
                 <button
                   type="submit"
                   disabled={!commentText.trim() || commentSending}
@@ -470,23 +486,7 @@ function TicketView({
                   </InfoRowEditable>
                 </>
               ) : (
-                <>
-                  <InfoRow
-                    label="Agent"
-                    value={
-                      hasAgent ? (
-                        <span className="truncate block" title={ticket.agent_email || undefined}>
-                          {ticket.agent_nume || ticket.agent_email}
-                        </span>
-                      ) : (
-                        <span className="text-amber-600 font-medium">Unassigned</span>
-                      )
-                    }
-                  />
-                  <InfoRow label="Prioritate" value={ticket.prioritate_nume} />
-                  <InfoRow label="Categorie" value={ticket.categorie_nume ?? "—"} />
-                  <InfoRow label="Departament" value={ticket.departament_nume} />
-                </>
+                <InfoRow label="Prioritate" value={ticket.prioritate_nume} />
               )}
 
               <InfoRow label="Data creare" value={<span className="tabular-nums">{formatDate(ticket.data_creare)}</span>} />

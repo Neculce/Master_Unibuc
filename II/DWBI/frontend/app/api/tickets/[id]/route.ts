@@ -79,9 +79,10 @@ export async function GET(
       };
 
       const commentsResult = await conn.execute(
-        `SELECT comment_id, content, created_date, source, author_name FROM (
+        `SELECT comment_id, content, created_date, source, author_name, is_internal FROM (
            SELECT cc.comment_id, cc.content, cc.created_date, 'client' AS source,
-                  NVL(f.prenume||' '||f.nume, j.denumire) AS author_name
+                  NVL(f.prenume||' '||f.nume, j.denumire) AS author_name,
+                  'N' AS is_internal
            FROM TickLy.comment_client cc
            JOIN TickLy.client c ON c.client_id = cc.client_id
            LEFT JOIN TickLy.client_fizica f ON f.client_id = c.client_id
@@ -89,7 +90,8 @@ export async function GET(
            WHERE cc.ticket_id = :id1
            UNION ALL
            SELECT ca.comment_id, ca.content, ca.created_date, 'agent' AS source,
-                  a.prenume||' '||a.nume AS author_name
+                  a.prenume||' '||a.nume AS author_name,
+                  ca.is_internal
            FROM TickLy.comment_agent ca
            JOIN TickLy.agent a ON a.agent_id = ca.agent_id
            WHERE ca.ticket_id = :id2
@@ -97,13 +99,17 @@ export async function GET(
         { id1: id, id2: id }
       );
       const commentRows = (commentsResult.rows as Record<string, unknown>[]) || [];
-      const comments = commentRows.map((c) => ({
+      let comments = commentRows.map((c) => ({
         comment_id: toJsonSafe(c.COMMENT_ID) as number,
         content: toJsonSafe(c.CONTENT) as string,
         created_date: toJsonSafe(c.CREATED_DATE) as string,
         source: toJsonSafe(c.SOURCE) as string,
         author_name: c.AUTHOR_NAME != null ? (toJsonSafe(c.AUTHOR_NAME) as string) : "—",
+        is_internal: (c.IS_INTERNAL as string) === "Y",
       }));
+      if (session.role === "client") {
+        comments = comments.filter((c) => !c.is_internal);
+      }
 
       const attachResult = await conn.execute(
         `SELECT atasament_id, file_name, file_path, file_size, file_type, upload_date, uploader_type

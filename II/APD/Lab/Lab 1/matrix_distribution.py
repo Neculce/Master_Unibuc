@@ -1,113 +1,107 @@
 from mpi4py import MPI
 import numpy as np
+import math
+
 
 def main():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-    
-    # Dimensiunea matricei (n >= p)
-    n = 2 # matrice 2x2
-    if n < size:
-        n = size  # asigură că n >= p
-    
-    print(f"Procesul {rank}: matrice {n}x{n}, {size} procese")
-    
-    # Procesul 0 generează matricea
+
+    n = max(2, size)  # n >= p
+
     if rank == 0:
         matrix = np.random.randint(1, 10, (n, n))
-        print(f"Procesul {rank}: matrice generată:")
-        print(matrix)
+        print(f"Matrice {n}x{n}:\n{matrix}")
     else:
         matrix = None
-    
-    # === DISTRIBUȚIA PE LINII ===
-    print(f"\n=== DISTRIBUȚIA PE LINII ===")
-    distribute_by_rows(comm, matrix, n, rank, size)
-    
-    # === DISTRIBUȚIA PE COLOANE ===
-    print(f"\n=== DISTRIBUȚIA PE COLOANE ===")
-    distribute_by_columns(comm, matrix, n, rank, size)
-    
-    # === DISTRIBUȚIA PE BLOCURI ===
-    print(f"\n=== DISTRIBUȚIA PE BLOCURI ===")
-    distribute_by_blocks(comm, matrix, n, rank, size)
 
-def distribute_by_rows(comm, matrix, n, rank, size):
-    """Distribuie matricea pe linii"""
-    if rank == 0:
-        # Împarte matricea pe linii
-        rows_per_process = n // size
-        for i in range(size):
-            start_row = i * rows_per_process
-            end_row = start_row + rows_per_process
-            if i == size - 1:  # ultimul proces ia și restul
-                end_row = n
-            
-            local_rows = matrix[start_row:end_row, :]
-            if i == 0:
-                my_rows = local_rows
-            else:
-                comm.send(local_rows, dest=i, tag=0)
-        
-        print(f"Procesul {rank}: am trimis linii către toate procesele")
-    else:
-        my_rows = comm.recv(source=0, tag=0)
-    
-    print(f"Procesul {rank}: am primit {my_rows.shape[0]} linii")
-    print(f"Procesul {rank}: linii locale:\n{my_rows}")
+    comm.Barrier()
 
-def distribute_by_columns(comm, matrix, n, rank, size):
-    """Distribuie matricea pe coloane"""
+    # --- Linii (Scatterv) ---
     if rank == 0:
-        # Împarte matricea pe coloane
-        cols_per_process = n // size
-        for i in range(size):
-            start_col = i * cols_per_process
-            end_col = start_col + cols_per_process
-            if i == size - 1:  # ultimul proces ia și restul
-                end_col = n
-            
-            local_cols = matrix[:, start_col:end_col]
-            if i == 0:
-                my_cols = local_cols
-            else:
-                comm.send(local_cols, dest=i, tag=1)
-        
-        print(f"Procesul {rank}: am trimis coloane către toate procesele")
-    else:
-        my_cols = comm.recv(source=0, tag=1)
-    
-    print(f"Procesul {rank}: am primit {my_cols.shape[1]} coloane")
-    print(f"Procesul {rank}: coloane locale:\n{my_cols}")
+        print("\n=== PE LINII ===")
+    rpp = n // size
+    counts = [rpp * n] * size
+    counts[size - 1] = (n - (size - 1) * rpp) * n
+    displs = [0] + list(np.cumsum(counts[:-1]))
 
-def distribute_by_blocks(comm, matrix, n, rank, size):
-    """Distribuie matricea pe blocuri"""
+    n_local = (n - (size - 1) * rpp) if rank == size - 1 else rpp
+    recv = np.empty(counts[rank], dtype=np.int64)
+
     if rank == 0:
-        # Calculează dimensiunea blocurilor - simplificat pentru primul curs
-        block_size = max(1, n // size)  # fiecare proces primește un bloc
-        
-        blocks_sent = 0
-        for i in range(0, n, block_size):
-            if blocks_sent >= size:
-                break
-                
-            end_i = min(i + block_size, n)
-            block = matrix[i:end_i, :]  # bloc de linii
-            
-            if blocks_sent == 0:
-                my_block = block
-            else:
-                comm.send(block, dest=blocks_sent, tag=2)
-            
-            blocks_sent += 1
-        
-        print(f"Procesul {rank}: am trimis {blocks_sent} blocuri")
+        comm.Scatterv([matrix.flatten(), (counts, displs)], recv, root=0)
     else:
-        my_block = comm.recv(source=0, tag=2)
-    
-    print(f"Procesul {rank}: am primit blocul de dimensiuni {my_block.shape}")
-    print(f"Procesul {rank}: blocul local:\n{my_block}")
+        comm.Scatterv([None, (counts, displs)], recv, root=0)
+
+    local = recv.reshape(n_local, n) if rank != 0 or n_local != n else recv.reshape(n_local, n)
+    msgs = comm.gather(f"Procesul {rank}: {local.shape[0]} linii\n{local}", root=0)
+    if rank == 0:
+        for m in msgs:
+            print(m)
+
+    # --- Coloane (Scatterv pe A.T) ---
+    if rank == 0:
+        print("\n=== PE COLOANE ===")
+    cpp = n // size
+    counts = [cpp * n] * size
+    counts[size - 1] = (n - (size - 1) * cpp) * n
+    displs = [0] + list(np.cumsum(counts[:-1]))
+
+    nc_local = (n - (size - 1) * cpp) if rank == size - 1 else cpp
+    recv = np.empty(counts[rank], dtype=np.int64)
+
+    if rank == 0:
+        comm.Scatterv([matrix.T.flatten(), (counts, displs)], recv, root=0)
+    else:
+        comm.Scatterv([None, (counts, displs)], recv, root=0)
+
+    local = recv.reshape(nc_local, n).T
+    msgs = comm.gather(f"Procesul {rank}: {local.shape[1]} coloane\n{local}", root=0)
+    if rank == 0:
+        for m in msgs:
+            print(m)
+
+    # --- Blocuri 2D (Scatterv) ---
+    if rank == 0:
+        print("\n=== PE BLOCURI ===")
+    br = int(math.sqrt(size))
+    bc = size // br
+    if br * bc != size:
+        br, bc = 1, size
+    rpb = (n + br - 1) // br
+    cpb = (n + bc - 1) // bc
+
+    def block_size(r):
+        i, j = r // bc, r % bc
+        nr = min(rpb, n - i * rpb)
+        nc = min(cpb, n - j * cpb)
+        return nr * nc
+
+    counts = [block_size(r) for r in range(size)]
+    displs = [0] + list(np.cumsum(counts[:-1]))
+
+    recv = np.empty(counts[rank], dtype=np.int64)
+
+    if rank == 0:
+        buf = np.empty(sum(counts), dtype=np.int64)
+        for r in range(size):
+            i, j = r // bc, r % bc
+            sr, er = i * rpb, min((i + 1) * rpb, n)
+            sc, ec = j * cpb, min((j + 1) * cpb, n)
+            buf[displs[r]:displs[r] + counts[r]] = matrix[sr:er, sc:ec].flatten()
+        comm.Scatterv([buf, (counts, displs)], recv, root=0)
+    else:
+        comm.Scatterv([None, (counts, displs)], recv, root=0)
+
+    nr = min(rpb, n - (rank // bc) * rpb)
+    nc = min(cpb, n - (rank % bc) * cpb)
+    local = recv.reshape(nr, nc)
+    msgs = comm.gather(f"Procesul {rank}: bloc {local.shape}\n{local}", root=0)
+    if rank == 0:
+        for m in msgs:
+            print(m)
+
 
 if __name__ == "__main__":
     main()

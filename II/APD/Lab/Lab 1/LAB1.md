@@ -550,342 +550,88 @@ note: This error originates from a subprocess, and is likely not a problem with 
 
 ## Distribuția Matricei
 
-**matrix_distribution.py** - Demonstrează distribuția eficientă a unei matrice n×n pe procese folosind trei metode: pe linii, pe coloane și pe blocuri. Scriptul folosește comunicarea point-to-point (`send()`/`recv()`) pentru distribuirea părților matricei de la procesul master către toate celelalte procese.
+**matrix_distribution.py** – Distribuția unei matrice n×n (n ≥ p) cu elemente aleatoare de la nodul 0 către toate procesele, folosind **comunicare colectivă**: `Scatterv` pentru distribuire și `Gather` pentru afișare ordonată. Trei metode: pe linii, pe coloane și pe blocuri 2D.
 
 ```bash
-iamxorum@xrm-mac-pro:~/Desktop/UniBuc/Algoritmi Paraleli si Distribuiti/Lab/Lab 1
 $ mpiexec -n 2 python3 matrix_distribution.py
-Procesul 0: matrice 2x2, 2 procese
-Procesul 0: matrice generată:
+Matrice 2x2:
 [[9 5]
  [3 9]]
 
-=== DISTRIBUȚIA PE LINII ===
-Procesul 0: am trimis linii către toate procesele
-Procesul 0: am primit 1 linii
-Procesul 0: linii locale:
+=== PE LINII ===
+Procesul 0: 1 linii
 [[9 5]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 0: am trimis coloane către toate procesele
-Procesul 0: am primit 1 coloane
-Procesul 0: coloane locale:
-[[9]
- [3]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 0: am trimis 2 blocuri
-Procesul 0: am primit blocul de dimensiuni (1, 2)
-Procesul 0: blocul local:
-[[9 5]]
-Procesul 1: matrice 2x2, 2 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 1: am primit 1 linii
-Procesul 1: linii locale:
+Procesul 1: 1 linii
 [[3 9]]
 
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 1: am primit 1 coloane
-Procesul 1: coloane locale:
+=== PE COLOANE ===
+Procesul 0: 1 coloane
+[[9]
+ [3]]
+Procesul 1: 1 coloane
 [[5]
  [9]]
 
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 1: am primit blocul de dimensiuni (1, 2)
-Procesul 1: blocul local:
+=== PE BLOCURI ===
+Procesul 0: bloc (1, 2)
+[[9 5]]
+Procesul 1: bloc (1, 2)
 [[3 9]]
+```
 
-iamxorum@xrm-mac-pro:~/Desktop/UniBuc/Algoritmi Paraleli si Distribuiti/Lab/Lab 1
+```bash
 $ mpiexec -n 4 python3 matrix_distribution.py
-Procesul 0: matrice 4x4, 4 procese
-Procesul 0: matrice generată:
+Matrice 4x4:
 [[7 9 4 9]
  [5 7 3 9]
  [1 7 3 3]
  [5 6 7 2]]
 
-=== DISTRIBUȚIA PE LINII ===
-Procesul 0: am trimis linii către toate procesele
-Procesul 0: am primit 1 linii
-Procesul 0: linii locale:
+=== PE LINII ===
+Procesul 0: 1 linii
 [[7 9 4 9]]
+Procesul 1: 1 linii
+[[5 7 3 9]]
+Procesul 2: 1 linii
+[[1 7 3 3]]
+Procesul 3: 1 linii
+[[5 6 7 2]]
 
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 0: am trimis coloane către toate procesele
-Procesul 0: am primit 1 coloane
-Procesul 0: coloane locale:
+=== PE COLOANE ===
+Procesul 0: 1 coloane
 [[7]
  [5]
  [1]
  [5]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 0: am trimis 4 blocuri
-Procesul 0: am primit blocul de dimensiuni (1, 4)
-Procesul 0: blocul local:
-[[7 9 4 9]]
-Procesul 1: matrice 4x4, 4 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 1: am primit 1 linii
-Procesul 1: linii locale:
-[[5 7 3 9]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 1: am primit 1 coloane
-Procesul 1: coloane locale:
+Procesul 1: 1 coloane
 [[9]
  [7]
  [7]
  [6]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 1: am primit blocul de dimensiuni (1, 4)
-Procesul 1: blocul local:
-[[5 7 3 9]]
-Procesul 3: matrice 4x4, 4 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 3: am primit 1 linii
-Procesul 3: linii locale:
-[[5 6 7 2]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 3: am primit 1 coloane
-Procesul 3: coloane locale:
+Procesul 2: 1 coloane
+[[4]
+ [3]
+ [3]
+ [7]]
+Procesul 3: 1 coloane
 [[9]
  [9]
  [3]
  [2]]
 
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 3: am primit blocul de dimensiuni (1, 4)
-Procesul 3: blocul local:
-[[5 6 7 2]]
-Procesul 2: matrice 4x4, 4 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 2: am primit 1 linii
-Procesul 2: linii locale:
-[[1 7 3 3]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 2: am primit 1 coloane
-Procesul 2: coloane locale:
-[[4]
- [3]
- [3]
- [7]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 2: am primit blocul de dimensiuni (1, 4)
-Procesul 2: blocul local:
-[[1 7 3 3]]
-
-iamxorum@xrm-mac-pro:~/Desktop/UniBuc/Algoritmi Paraleli si Distribuiti/Lab/Lab 1
-$ mpiexec -n 8 python3 matrix_distribution.py
-Procesul 0: matrice 8x8, 8 procese
-Procesul 0: matrice generată:
-[[7 9 2 6 1 4 6 3]
- [2 2 4 1 5 6 8 2]
- [6 3 6 5 9 4 6 3]
- [9 4 1 6 6 4 9 5]
- [5 6 1 9 2 6 7 3]
- [5 2 8 1 5 7 6 6]
- [6 7 7 2 1 8 7 9]
- [3 8 2 1 7 3 4 9]]
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 0: am trimis linii către toate procesele
-Procesul 0: am primit 1 linii
-Procesul 0: linii locale:
-[[7 9 2 6 1 4 6 3]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 0: am trimis coloane către toate procesele
-Procesul 0: am primit 1 coloane
-Procesul 0: coloane locale:
-[[7]
- [2]
- [6]
- [9]
- [5]
- [5]
- [6]
- [3]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 0: am trimis 8 blocuri
-Procesul 0: am primit blocul de dimensiuni (1, 8)
-Procesul 0: blocul local:
-[[7 9 2 6 1 4 6 3]]
-Procesul 3: matrice 8x8, 8 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 3: am primit 1 linii
-Procesul 3: linii locale:
-[[9 4 1 6 6 4 9 5]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 3: am primit 1 coloane
-Procesul 3: coloane locale:
-[[6]
- [1]
- [5]
- [6]
- [9]
- [1]
- [2]
- [1]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 3: am primit blocul de dimensiuni (1, 8)
-Procesul 3: blocul local:
-[[9 4 1 6 6 4 9 5]]
-Procesul 4: matrice 8x8, 8 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 4: am primit 1 linii
-Procesul 4: linii locale:
-[[5 6 1 9 2 6 7 3]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 4: am primit 1 coloane
-Procesul 4: coloane locale:
-[[1]
- [5]
- [9]
- [6]
- [2]
- [5]
- [1]
- [7]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 4: am primit blocul de dimensiuni (1, 8)
-Procesul 4: blocul local:
-[[5 6 1 9 2 6 7 3]]
-Procesul 1: matrice 8x8, 8 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 1: am primit 1 linii
-Procesul 1: linii locale:
-[[2 2 4 1 5 6 8 2]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 1: am primit 1 coloane
-Procesul 1: coloane locale:
-[[9]
- [2]
- [3]
- [4]
- [6]
- [2]
- [7]
- [8]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 1: am primit blocul de dimensiuni (1, 8)
-Procesul 1: blocul local:
-[[2 2 4 1 5 6 8 2]]
-Procesul 5: matrice 8x8, 8 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 5: am primit 1 linii
-Procesul 5: linii locale:
-[[5 2 8 1 5 7 6 6]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 5: am primit 1 coloane
-Procesul 5: coloane locale:
-[[4]
- [6]
- [4]
- [4]
- [6]
- [7]
- [8]
- [3]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 5: am primit blocul de dimensiuni (1, 8)
-Procesul 5: blocul local:
-[[5 2 8 1 5 7 6 6]]
-Procesul 6: matrice 8x8, 8 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 6: am primit 1 linii
-Procesul 6: linii locale:
-[[6 7 7 2 1 8 7 9]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 6: am primit 1 coloane
-Procesul 6: coloane locale:
-[[6]
- [8]
- [6]
- [9]
- [7]
- [6]
- [7]
- [4]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 6: am primit blocul de dimensiuni (1, 8)
-Procesul 6: blocul local:
-[[6 7 7 2 1 8 7 9]]
-Procesul 7: matrice 8x8, 8 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 7: am primit 1 linii
-Procesul 7: linii locale:
-[[3 8 2 1 7 3 4 9]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 7: am primit 1 coloane
-Procesul 7: coloane locale:
-[[3]
- [2]
- [3]
- [5]
- [3]
- [6]
- [9]
- [9]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 7: am primit blocul de dimensiuni (1, 8)
-Procesul 7: blocul local:
-[[3 8 2 1 7 3 4 9]]
-Procesul 2: matrice 8x8, 8 procese
-
-=== DISTRIBUȚIA PE LINII ===
-Procesul 2: am primit 1 linii
-Procesul 2: linii locale:
-[[6 3 6 5 9 4 6 3]]
-
-=== DISTRIBUȚIA PE COLOANE ===
-Procesul 2: am primit 1 coloane
-Procesul 2: coloane locale:
-[[2]
- [4]
- [6]
- [1]
- [1]
- [8]
- [7]
- [2]]
-
-=== DISTRIBUȚIA PE BLOCURI ===
-Procesul 2: am primit blocul de dimensiuni (1, 8)
-Procesul 2: blocul local:
-[[6 3 6 5 9 4 6 3]]
+=== PE BLOCURI ===
+Procesul 0: bloc (2, 2)
+[[7 9]
+ [5 7]]
+Procesul 1: bloc (2, 2)
+[[4 9]
+ [3 9]]
+Procesul 2: bloc (2, 2)
+[[1 7]
+ [5 6]]
+Procesul 3: bloc (2, 2)
+[[3 3]
+ [7 2]]
 ```
-
-Scriptul demonstrează trei strategii de distribuție:
-- **Pe linii**: Fiecare proces primește linii consecutive din matrice
-- **Pe coloane**: Fiecare proces primește coloane consecutive din matrice  
-- **Pe blocuri**: Matricea se împarte în sub-matrici dreptunghiulare
 
 ---

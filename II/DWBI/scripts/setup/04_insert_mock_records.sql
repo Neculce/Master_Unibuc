@@ -141,8 +141,8 @@ WHERE c.email = 'office@constructii-abc.ro' AND d.nume = 'Suport tehnic' AND pr.
   AND cat.nume = 'Software' AND cat.categorie_parinte_id IS NULL;
 
 -- Comment client / agent --
-INSERT INTO TickLy.comment_client (ticket_id, client_id, content, created_date, is_internal)
-SELECT t.ticket_id, c.client_id, 'Am reinstalat aplicatia dar problema persista.', DATE '2024-06-01', 'N'
+INSERT INTO TickLy.comment_client (ticket_id, client_id, content, created_date)
+SELECT t.ticket_id, c.client_id, 'Am reinstalat aplicatia dar problema persista.', DATE '2024-06-01'
 FROM TickLy.ticket t, TickLy.client c WHERE c.email = 'ion.vasile@gmail.com' AND t.titlu = 'Nu se activeaza licenta' AND t.client_id = c.client_id;
 
 INSERT INTO TickLy.comment_agent (ticket_id, agent_id, content, created_date, is_internal)

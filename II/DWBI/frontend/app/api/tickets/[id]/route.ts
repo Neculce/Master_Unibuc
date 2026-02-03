@@ -30,7 +30,8 @@ export async function GET(
   try {
     const result = await runQuery(async (conn) => {
       const ticketResult = await conn.execute(
-        `SELECT t.ticket_id, t.client_id, t.titlu, t.descriere, t.data_creare, t.data_rezolvare, t.data_inchidere,
+        `SELECT t.ticket_id, t.client_id, t.status_id, t.prioritate_id, t.departament_id, t.categorie_id,
+                t.titlu, t.descriere, t.data_creare, t.data_rezolvare, t.data_inchidere,
                 s.nume AS status_nume, p.nume AS prioritate_nume, d.nume AS departament_nume,
                 cat.nume AS categorie_nume,
                 c.email AS client_email,
@@ -57,6 +58,11 @@ export async function GET(
       const t = ticketRows[0];
       const ticket = {
         ticket_id: toJsonSafe(t.TICKET_ID) as number,
+        status_id: t.STATUS_ID != null ? Number(t.STATUS_ID) : null,
+        prioritate_id: t.PRIORITATE_ID != null ? Number(t.PRIORITATE_ID) : null,
+        departament_id: t.DEPARTAMENT_ID != null ? Number(t.DEPARTAMENT_ID) : null,
+        categorie_id: t.CATEGORIE_ID != null ? Number(t.CATEGORIE_ID) : null,
+        assigned_agent_id: t.ASSIGNED_AGENT_ID != null ? Number(t.ASSIGNED_AGENT_ID) : null,
         titlu: toJsonSafe(t.TITLU) as string,
         descriere: t.DESCRIERE != null ? toJsonSafe(t.DESCRIERE) as string : null,
         data_creare: toJsonSafe(t.DATA_CREARE) as string,
@@ -130,6 +136,100 @@ export async function GET(
     console.error("ticket detail api", e);
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Failed to fetch ticket" },
+      { status: 500 }
+    );
+  }
+}
+
+type PatchBody = {
+  status_id?: number;
+  prioritate_id?: number;
+  departament_id?: number;
+  categorie_id?: number | null;
+  assigned_agent_id?: number | null;
+};
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const id = Number((await params).id);
+  if (!Number.isInteger(id) || id < 1) {
+    return NextResponse.json({ error: "Invalid ticket id" }, { status: 400 });
+  }
+
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  if (session.role !== "agent") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let body: PatchBody;
+  try {
+    body = (await request.json()) as PatchBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  try {
+    await runQuery(async (conn) => {
+      if (body.status_id != null || body.prioritate_id != null || body.departament_id != null || body.categorie_id !== undefined) {
+        const updates: string[] = [];
+        const binds: Record<string, number | null> = { id };
+        if (body.status_id != null) {
+          updates.push("status_id = :status_id");
+          binds.status_id = body.status_id;
+        }
+        if (body.prioritate_id != null) {
+          updates.push("prioritate_id = :prioritate_id");
+          binds.prioritate_id = body.prioritate_id;
+        }
+        if (body.departament_id != null) {
+          updates.push("departament_id = :departament_id");
+          binds.departament_id = body.departament_id;
+        }
+        if (body.categorie_id !== undefined) {
+          updates.push("categorie_id = :categorie_id");
+          binds.categorie_id = body.categorie_id;
+        }
+        if (body.status_id != null) {
+          const statusNameResult = await conn.execute(
+            "SELECT nume FROM TickLy.status WHERE status_id = :sid",
+            [body.status_id]
+          );
+          const sn = (statusNameResult.rows as Record<string, unknown>[])?.[0]?.NUME as string | undefined;
+          if (sn === "Rezolvat") {
+            updates.push("data_rezolvare = NVL(data_rezolvare, SYSDATE)");
+          } else if (sn === "Inchis") {
+            updates.push("data_inchidere = NVL(data_inchidere, SYSDATE)");
+          }
+        }
+        if (updates.length > 0) {
+          await conn.execute(
+            `UPDATE TickLy.ticket SET ${updates.join(", ")} WHERE ticket_id = :id`,
+            binds
+          );
+        }
+      }
+
+      if (body.assigned_agent_id !== undefined) {
+        await conn.execute("DELETE FROM TickLy.ticket_agent WHERE ticket_id = :id AND rol = 'PRIMARY'", [id]);
+        if (body.assigned_agent_id != null) {
+          await conn.execute(
+            `INSERT INTO TickLy.ticket_agent (ticket_id, agent_id, rol) VALUES (:id, :agent_id, 'PRIMARY')`,
+            { id, agent_id: body.assigned_agent_id }
+          );
+        }
+      }
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("ticket patch", e);
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Failed to update ticket" },
       { status: 500 }
     );
   }

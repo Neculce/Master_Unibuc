@@ -137,7 +137,6 @@ CREATE TABLE TickLy.comment_client (
     client_id NUMBER NOT NULL,
     content CLOB NOT NULL,
     created_date DATE DEFAULT SYSDATE NOT NULL,
-    is_internal CHAR(1) DEFAULT 'N' CHECK (is_internal IN ('Y', 'N')),
     CONSTRAINT fk_comment_client_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket(ticket_id) ON DELETE CASCADE,
     CONSTRAINT fk_comment_client_client FOREIGN KEY (client_id) REFERENCES TickLy.client(client_id) ON DELETE CASCADE
 );

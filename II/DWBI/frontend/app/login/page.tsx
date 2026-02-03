@@ -41,7 +41,6 @@ export default function LoginPage() {
           <span className="material-symbols-outlined text-[2rem]">login</span>
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-[#0e141b]">Sign in</h1>
-        <p className="text-gray-500 mt-2 text-sm">Use your client or agent account</p>
       </div>
       <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg p-6 sm:p-8">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">

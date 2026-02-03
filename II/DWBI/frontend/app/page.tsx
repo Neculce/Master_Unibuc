@@ -7,6 +7,7 @@ type Ticket = {
   ticket_id: number;
   titlu: string;
   data_creare: string;
+  data_ultima_actualizare: string | null;
   data_rezolvare: string | null;
   status_nume: string;
   prioritate_nume: string;
@@ -97,12 +98,13 @@ export default function DashboardPage() {
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Priority</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Created</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Last updated</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {tickets.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center">
+                  <td colSpan={8} className="px-6 py-20 text-center">
                     <span className="material-symbols-outlined text-5xl text-gray-300 mb-3 block">inbox</span>
                     <p className="text-gray-600 font-medium">No tickets found</p>
                     <p className="text-sm text-gray-400 mt-1">Tickets will appear here when created.</p>
@@ -130,6 +132,7 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{t.prioritate_nume}</td>
                     <td className="px-6 py-4 text-sm text-gray-500 tabular-nums">{formatDate(t.data_creare)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 tabular-nums">{formatDate(t.data_ultima_actualizare ?? t.data_creare)}</td>
                   </tr>
                 ))
               )}

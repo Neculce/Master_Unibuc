@@ -121,6 +121,7 @@ CREATE TABLE TickLy.ticket (
     titlu VARCHAR2(200) NOT NULL,
     descriere CLOB,
     data_creare DATE DEFAULT SYSDATE NOT NULL,
+    data_ultima_actualizare DATE DEFAULT SYSDATE,
     data_rezolvare DATE,
     data_inchidere DATE,
     timp_rezolvare_ore NUMBER,

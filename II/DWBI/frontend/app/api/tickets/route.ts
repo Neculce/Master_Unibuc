@@ -14,7 +14,7 @@ export async function GET() {
     const rows = await runQuery(async (conn) => {
       const isClient = session.role === "client";
       const sql = isClient
-        ? `SELECT t.ticket_id, t.titlu, t.data_creare, t.data_rezolvare,
+        ? `SELECT t.ticket_id, t.titlu, t.data_creare, t.data_ultima_actualizare, t.data_rezolvare,
                 s.nume AS status_nume, p.nume AS prioritate_nume, d.nume AS departament_nume,
                 c.email AS client_email,
                 NVL(f.prenume||' '||f.nume, j.denumire) AS client_nume
@@ -26,9 +26,9 @@ export async function GET() {
          LEFT JOIN TickLy.client_fizica f ON f.client_id = c.client_id
          LEFT JOIN TickLy.client_juridica j ON j.client_id = c.client_id
          WHERE t.client_id = :client_id
-         ORDER BY t.data_creare DESC
+         ORDER BY NVL(t.data_ultima_actualizare, t.data_creare) DESC, t.data_creare DESC
          FETCH FIRST 100 ROWS ONLY`
-        : `SELECT t.ticket_id, t.titlu, t.data_creare, t.data_rezolvare,
+        : `SELECT t.ticket_id, t.titlu, t.data_creare, t.data_ultima_actualizare, t.data_rezolvare,
                 s.nume AS status_nume, p.nume AS prioritate_nume, d.nume AS departament_nume,
                 c.email AS client_email,
                 NVL(f.prenume||' '||f.nume, j.denumire) AS client_nume
@@ -39,7 +39,7 @@ export async function GET() {
          JOIN TickLy.client c ON c.client_id = t.client_id
          LEFT JOIN TickLy.client_fizica f ON f.client_id = c.client_id
          LEFT JOIN TickLy.client_juridica j ON j.client_id = c.client_id
-         ORDER BY t.data_creare DESC
+         ORDER BY NVL(t.data_ultima_actualizare, t.data_creare) DESC, t.data_creare DESC
          FETCH FIRST 100 ROWS ONLY`;
       const binds = isClient ? [session.id] : [];
       const r = await conn.execute(sql, binds);
@@ -48,6 +48,7 @@ export async function GET() {
         ticket_id: row.TICKET_ID,
         titlu: row.TITLU,
         data_creare: row.DATA_CREARE,
+        data_ultima_actualizare: row.DATA_ULTIMA_ACTUALIZARE ?? row.DATA_CREARE,
         data_rezolvare: row.DATA_REZOLVARE,
         status_nume: row.STATUS_NUME,
         prioritate_nume: row.PRIORITATE_NUME,

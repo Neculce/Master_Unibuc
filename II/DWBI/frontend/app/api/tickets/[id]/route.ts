@@ -213,6 +213,7 @@ export async function PATCH(
           }
         }
         if (updates.length > 0) {
+          updates.push("data_ultima_actualizare = SYSDATE");
           await conn.execute(
             `UPDATE TickLy.ticket SET ${updates.join(", ")} WHERE ticket_id = :id`,
             binds
@@ -228,6 +229,10 @@ export async function PATCH(
             { id, agent_id: body.assigned_agent_id }
           );
         }
+        await conn.execute(
+          "UPDATE TickLy.ticket SET data_ultima_actualizare = SYSDATE WHERE ticket_id = :id",
+          [id]
+        );
       }
     });
 

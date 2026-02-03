@@ -54,6 +54,10 @@ export async function POST(
           { ticket_id: ticketId, agent_id: session.id, content, is_internal: isInternal ? "Y" : "N" }
         );
       }
+      await conn.execute(
+        "UPDATE TickLy.ticket SET data_ultima_actualizare = SYSDATE WHERE ticket_id = :tid",
+        { tid: ticketId }
+      );
       return { ok: true };
     });
 

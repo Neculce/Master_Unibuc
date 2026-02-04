@@ -587,7 +587,7 @@ function TicketView({
             </div>
           )}
 
-          <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden sticky top-24">
+          <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60">
               <h2 className="text-sm font-semibold text-[#0e141b] flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg text-primary">info</span>
@@ -722,8 +722,8 @@ function TicketView({
           </div>
 
           {/* Istoric ticket */}
-          <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+          <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden flex flex-col min-h-0">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60 shrink-0">
               <h2 className="text-sm font-semibold text-[#0e141b] flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg text-primary">history_edu</span>
                 Istoric ticket
@@ -732,17 +732,17 @@ function TicketView({
                 )}
               </h2>
             </div>
-            <div className="px-5 py-4 max-h-[280px] overflow-y-auto">
+            <div className="px-5 py-4 max-h-[280px] min-h-0 overflow-y-auto overflow-x-hidden">
               {historyItems.length === 0 ? (
                 <p className="text-sm text-gray-500">Niciun eveniment încă.</p>
               ) : (
-                <ul className="space-y-3">
+                <ul className="space-y-3 list-none p-0 m-0">
                   {historyItems.map((h) => (
                     <li key={"h-" + h.history_id} className="flex gap-2 text-sm">
-                      <span className="material-symbols-outlined text-gray-400 shrink-0 text-lg">edit_note</span>
-                      <div className="min-w-0">
-                        <p className="text-gray-700">{h.display_text ?? "Descriere modificată"}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                      <span className="material-symbols-outlined text-gray-400 shrink-0 text-lg mt-0.5" aria-hidden>edit_note</span>
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <p className="text-gray-700 break-words">{h.display_text ?? "Descriere modificată"}</p>
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">
                           {h.author_name} · <span className="tabular-nums">{formatDate(h.created_date)}</span>
                         </p>
                       </div>

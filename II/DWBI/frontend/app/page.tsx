@@ -160,7 +160,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <p className="text-gray-500 mt-1.5 text-sm">
-            {isAgent ? "Toate ticketurile de suport" : "Ticketurile tale"}
+            {isAgent ? "Toate ticketele de suport" : "Ticketele tale"}
             {user?.name ? ` · ${user.name}` : ""}
           </p>
         </div>
@@ -171,9 +171,6 @@ export default function DashboardPage() {
         <div className="rounded-2xl border border-gray-200/90 bg-white shadow-card-lg overflow-hidden">
           <div className="border-b border-gray-100 bg-gray-50/60 px-6 py-3">
             <h2 className="text-sm font-semibold text-[#0e141b]">Filtre</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {isAgent ? "Poți selecta mai multe statusuri." : "Deschis = în lucru, Închis = rezolvat sau închis."}
-            </p>
           </div>
           <div className="p-4 flex flex-wrap gap-2">
             <button
@@ -254,13 +251,6 @@ export default function DashboardPage() {
       <div className="rounded-2xl border border-gray-200/90 bg-white shadow-card-lg overflow-hidden">
         <div className="border-b border-gray-100 bg-gray-50/60 px-6 py-4">
           <h2 className="text-base font-semibold text-[#0e141b]">Tickets</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {statusFilters.size > 0
-              ? `${filteredTickets.length} ticketuri afișate (filtru: ${Array.from(statusFilters).join(", ")})`
-              : isAgent
-                ? "Lista tuturor ticketurilor din sistem"
-                : "Lista ticketurilor deschise de tine"}
-          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] text-left border-collapse">
@@ -302,8 +292,8 @@ export default function DashboardPage() {
                       {statusFilters.size > 0
                         ? "Schimbă sau resetează filtrele pentru a vedea mai multe rezultate."
                         : isAgent
-                          ? "Nu există ticketuri în sistem."
-                          : "Ticketurile tale vor apărea aici."}
+                          ? "Nu există tickete."
+                          : "Ticketele tale vor apărea aici."}
                     </p>
                   </td>
                 </tr>

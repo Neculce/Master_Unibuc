@@ -44,7 +44,7 @@ export async function POST(
       if (session.role === "client") {
         if (clientId !== session.id) return { error: "forbidden" as const };
         await conn.execute(
-          `INSERT INTO TickLy.comment_client (ticket_id, client_id, content, is_internal) VALUES (:ticket_id, :client_id, :content, 'N')`,
+          `INSERT INTO TickLy.comment_client (ticket_id, client_id, content) VALUES (:ticket_id, :client_id, :content)`,
           { ticket_id: ticketId, client_id: session.id, content }
         );
       } else {

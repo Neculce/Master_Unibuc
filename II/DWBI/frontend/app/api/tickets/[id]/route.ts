@@ -79,9 +79,10 @@ export async function GET(
       };
 
       const commentsResult = await conn.execute(
-        `SELECT comment_id, content, created_date, source, author_name, is_internal FROM (
+        `SELECT comment_id, content, created_date, source, author_name, author_id, is_internal FROM (
            SELECT cc.comment_id, cc.content, cc.created_date, 'client' AS source,
                   NVL(f.prenume||' '||f.nume, j.denumire) AS author_name,
+                  cc.client_id AS author_id,
                   'N' AS is_internal
            FROM TickLy.comment_client cc
            JOIN TickLy.client c ON c.client_id = cc.client_id
@@ -91,6 +92,7 @@ export async function GET(
            UNION ALL
            SELECT ca.comment_id, ca.content, ca.created_date, 'agent' AS source,
                   a.prenume||' '||a.nume AS author_name,
+                  ca.agent_id AS author_id,
                   ca.is_internal
            FROM TickLy.comment_agent ca
            JOIN TickLy.agent a ON a.agent_id = ca.agent_id
@@ -105,11 +107,31 @@ export async function GET(
         created_date: toJsonSafe(c.CREATED_DATE) as string,
         source: toJsonSafe(c.SOURCE) as string,
         author_name: c.AUTHOR_NAME != null ? (toJsonSafe(c.AUTHOR_NAME) as string) : "—",
+        author_id: c.AUTHOR_ID != null ? Number(c.AUTHOR_ID) : null,
         is_internal: (c.IS_INTERNAL as string) === "Y",
       }));
       if (session.role === "client") {
         comments = comments.filter((c) => !c.is_internal);
       }
+
+      const historyResult = await conn.execute(
+        `SELECT history_id, event_type, created_date, created_by_role, created_by_id, author_name, display_text
+         FROM TickLy.ticket_history WHERE ticket_id = :id ORDER BY created_date`,
+        [id]
+      );
+      const historyRows = (historyResult.rows as Record<string, unknown>[]) || [];
+      const history = historyRows.map((h) => ({
+        history_id: toJsonSafe(h.HISTORY_ID) as number,
+        event_type: toJsonSafe(h.EVENT_TYPE) as string,
+        created_date: toJsonSafe(h.CREATED_DATE) as string,
+        author_name: h.AUTHOR_NAME != null ? (toJsonSafe(h.AUTHOR_NAME) as string) : "—",
+        display_text: h.DISPLAY_TEXT != null ? (toJsonSafe(h.DISPLAY_TEXT) as string) : null,
+      }));
+
+      const timeline = [
+        ...comments.map((c) => ({ type: "comment" as const, ...c })),
+        ...history.map((h) => ({ type: "history" as const, ...h })),
+      ].sort((a, b) => new Date(a.created_date).getTime() - new Date(b.created_date).getTime());
 
       const attachResult = await conn.execute(
         `SELECT atasament_id, file_name, file_path, file_size, file_type, upload_date, uploader_type
@@ -128,7 +150,7 @@ export async function GET(
       }));
 
       const clientId = t.CLIENT_ID != null ? Number(t.CLIENT_ID) : null;
-      return { ticket, comments, attachments, clientId };
+      return { ticket, comments, timeline, attachments, clientId };
     });
 
     if (result == null) {
@@ -137,7 +159,7 @@ export async function GET(
     if (session.role === "client" && result.clientId !== session.id) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
-    return NextResponse.json({ ticket: result.ticket, comments: result.comments, attachments: result.attachments });
+    return NextResponse.json({ ticket: result.ticket, comments: result.comments, timeline: result.timeline, attachments: result.attachments });
   } catch (e) {
     console.error("ticket detail api", e);
     return NextResponse.json(
@@ -148,6 +170,8 @@ export async function GET(
 }
 
 type PatchBody = {
+  titlu?: string;
+  descriere?: string | null;
   status_id?: number;
   prioritate_id?: number;
   departament_id?: number;
@@ -168,9 +192,6 @@ export async function PATCH(
   if (!session) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (session.role !== "agent") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
   let body: PatchBody;
   try {
@@ -179,8 +200,52 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  const isAgent = session.role === "agent";
+  if (!isAgent && (body.status_id != null || body.prioritate_id != null || body.departament_id != null || body.categorie_id !== undefined || body.assigned_agent_id !== undefined)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     await runQuery(async (conn) => {
+      const ownTicketCheck = await conn.execute(
+        "SELECT client_id FROM TickLy.ticket WHERE ticket_id = :id",
+        [id]
+      );
+      const rows = (ownTicketCheck.rows as Record<string, unknown>[]) || [];
+      if (rows.length === 0) return;
+      const ticketClientId = rows[0].CLIENT_ID != null ? Number(rows[0].CLIENT_ID) : null;
+      const canEditTicket = isAgent || ticketClientId === session.id;
+
+      if (body.titlu !== undefined && canEditTicket) {
+        const newTitlu = (body.titlu ?? "").trim() || null;
+        if (newTitlu != null) {
+          await conn.execute(
+            `UPDATE TickLy.ticket SET titlu = :titlu, data_ultima_actualizare = SYSDATE WHERE ticket_id = :id`,
+            { id, titlu: newTitlu }
+          );
+          await conn.execute(
+            `INSERT INTO TickLy.ticket_history (ticket_id, event_type, created_by_role, created_by_id, author_name, display_text)
+             VALUES (:id, 'TITLU_MODIFICAT', :role, :author_id, :author_name, 'Titlul a fost modificat')`,
+            { id, role: session.role, author_id: session.id, author_name: session.name || "" }
+          );
+        }
+      }
+
+      if (body.descriere !== undefined && canEditTicket) {
+        const newDesc = body.descriere === null || body.descriere === "" ? null : body.descriere;
+        await conn.execute(
+          `UPDATE TickLy.ticket SET descriere = :descriere, data_ultima_actualizare = SYSDATE WHERE ticket_id = :id`,
+          { id, descriere: newDesc }
+        );
+        await conn.execute(
+          `INSERT INTO TickLy.ticket_history (ticket_id, event_type, created_by_role, created_by_id, author_name, display_text)
+           VALUES (:id, 'DESCRIERE_MODIFICATA', :role, :author_id, :author_name, 'Descrierea a fost modificată')`,
+          { id, role: session.role, author_id: session.id, author_name: session.name || "" }
+        );
+      }
+
+      if (!isAgent) return;
+
       if (body.status_id != null || body.prioritate_id != null || body.departament_id != null || body.categorie_id !== undefined) {
         const updates: string[] = [];
         const binds: Record<string, number | null> = { id };

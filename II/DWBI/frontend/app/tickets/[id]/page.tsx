@@ -32,8 +32,13 @@ type TicketDetail = {
     created_date: string;
     source: string;
     author_name: string;
+    author_id?: number | null;
     is_internal?: boolean;
   }[];
+  timeline: Array<
+    | { type: "comment"; comment_id: number; content: string; created_date: string; source: string; author_name: string; author_id?: number | null; is_internal?: boolean }
+    | { type: "history"; history_id: number; event_type: string; created_date: string; author_name: string; display_text: string | null }
+  >;
   attachments: {
     atasament_id: number;
     file_name: string;
@@ -122,15 +127,18 @@ function InfoRowEditable({
 function TicketView({
   data,
   userRole,
+  userId,
   lookup,
   onRefresh,
 }: {
   data: TicketDetail;
   userRole: "client" | "agent";
+  userId: number | null;
   lookup: Lookup | null;
   onRefresh: () => void;
 }) {
   const { ticket, comments, attachments } = data;
+  const timeline = data.timeline ?? comments.map((c) => ({ type: "comment" as const, ...c }));
   const hasAgent = ticket.agent_nume != null || ticket.agent_email != null;
   const isAgent = userRole === "agent";
   const [saving, setSaving] = useState(false);
@@ -138,10 +146,18 @@ function TicketView({
   const [commentSending, setCommentSending] = useState(false);
   const [commentInternal, setCommentInternal] = useState(false);
   const [editField, setEditField] = useState<EditField>(null);
+  const [editingDescriere, setEditingDescriere] = useState(false);
+  const [descriereDraft, setDescriereDraft] = useState(ticket.descriere ?? "");
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentContent, setEditingCommentContent] = useState("");
   const ticketId = ticket.ticket_id;
 
+  useEffect(() => {
+    if (!editingDescriere) setDescriereDraft(ticket.descriere ?? "");
+  }, [ticket.descriere, editingDescriere]);
+
   const handlePatch = useCallback(
-    async (payload: { status_id?: number; prioritate_id?: number; departament_id?: number; categorie_id?: number | null; assigned_agent_id?: number | null }) => {
+    async (payload: { descriere?: string | null; status_id?: number; prioritate_id?: number; departament_id?: number; categorie_id?: number | null; assigned_agent_id?: number | null }) => {
       setSaving(true);
       try {
         const res = await fetch("/api/tickets/" + ticketId, {
@@ -200,6 +216,59 @@ function TicketView({
     [ticketId, commentText, commentSending, commentInternal, isAgent, onRefresh]
   );
 
+  const handleSaveDescriere = useCallback(() => {
+    const newVal = descriereDraft.trim() || null;
+    if (newVal === (ticket.descriere ?? "")) {
+      setEditingDescriere(false);
+      return;
+    }
+    setSaving(true);
+    fetch("/api/tickets/" + ticketId, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ descriere: newVal || null }),
+    })
+      .then((r) => {
+        if (!r.ok) return r.json().then((j: { error?: string }) => Promise.reject(new Error(j.error || "Update failed")));
+        onRefresh();
+        setEditingDescriere(false);
+      })
+      .catch((e) => {
+        console.error(e);
+        alert(e instanceof Error ? e.message : "Update failed");
+      })
+      .finally(() => setSaving(false));
+  }, [ticketId, ticket.descriere, descriereDraft, onRefresh]);
+
+  const handleSaveComment = useCallback(
+    (cid: string, content: string) => {
+      if (!content.trim()) return;
+      setSaving(true);
+      fetch("/api/tickets/" + ticketId + "/comments/" + cid, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: content.trim() }),
+      })
+        .then((r) => {
+          if (!r.ok) return r.json().then((j: { error?: string }) => Promise.reject(new Error(j.error || "Update failed")));
+          setEditingCommentId(null);
+          onRefresh();
+        })
+        .catch((e) => {
+          console.error(e);
+          alert(e instanceof Error ? e.message : "Update failed");
+        })
+        .finally(() => setSaving(false));
+    },
+    [ticketId, onRefresh]
+  );
+
+  const canEditComment = useCallback(
+    (item: { type: string; source?: string; author_id?: number | null }) =>
+      item.type === "comment" && item.source === userRole && userId != null && item.author_id === userId,
+    [userRole, userId]
+  );
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center gap-2 text-sm">
@@ -217,51 +286,146 @@ function TicketView({
           <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden">
             <div className="px-6 py-5">
               <h1 className="text-xl font-bold text-[#0e141b]">{ticket.titlu}</h1>
-              {ticket.descriere ? (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{ticket.descriere}</p>
-                </div>
-              ) : null}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                {editingDescriere ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={descriereDraft}
+                      onChange={(e) => setDescriereDraft(e.target.value)}
+                      rows={5}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50/60 text-sm text-[#0e141b] focus:bg-white focus:border-primary/40 resize-y"
+                      disabled={saving}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveDescriere}
+                        disabled={saving}
+                        className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+                      >
+                        Salvează
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEditingDescriere(false); setDescriereDraft(ticket.descriere ?? ""); }}
+                        disabled={saving}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200"
+                      >
+                        Anulare
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {ticket.descriere ? (
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{ticket.descriere}</p>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">Fără descriere</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => { setEditingDescriere(true); setDescriereDraft(ticket.descriere ?? ""); }}
+                      className="mt-2 text-sm font-medium text-primary hover:underline flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-lg">edit</span>
+                      Editează descrierea
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Card Comentarii + formular */}
+          {/* Card Comentarii + timeline + formular */}
           <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-primary/5">
               <h2 className="text-sm font-semibold text-[#0e141b] flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg text-primary">chat_bubble_outline</span>
                 Comentarii
-                {comments.length > 0 && (
-                  <span className="text-xs font-normal text-gray-500">({comments.length})</span>
+                {timeline.length > 0 && (
+                  <span className="text-xs font-normal text-gray-500">({timeline.filter((t) => t.type === "comment").length})</span>
                 )}
               </h2>
             </div>
             <div className="px-6 py-5">
-              {comments.length === 0 ? (
+              {timeline.length === 0 ? (
                 <p className="text-sm text-gray-500 flex items-center gap-2.5 py-2">
                   <span className="material-symbols-outlined text-lg text-gray-400">forum</span>
                   Niciun comentariu încă.
                 </p>
               ) : (
                 <ul className="space-y-4">
-                  {comments.map((c) => (
-                    <li key={c.source + "-" + c.comment_id} className="flex gap-3">
-                      <div className={"shrink-0 size-10 rounded-full flex items-center justify-center text-xs font-bold " + (c.source === "agent" ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-600")}>
-                        {c.source === "agent" ? "A" : "C"}
-                      </div>
-                      <div className={"min-w-0 flex-1 rounded-xl px-4 py-3 border " + (c.is_internal ? "bg-amber-50/80 border-amber-200/60" : "bg-gray-50/80 border-gray-100")}>
-                        <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-[#0e141b]">{c.author_name}</span>
-                          <span className="text-xs text-gray-500">{c.source === "agent" ? "Agent" : "Client"}</span>
-                          {c.is_internal && (
-                            <span className="text-xs font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">Intern</span>
-                          )}
-                          <span className="text-xs text-gray-400 tabular-nums">{formatDate(c.created_date)}</span>
+                  {timeline.map((item) =>
+                    item.type === "history" ? (
+                      <li key={"h-" + item.history_id} className="flex gap-3">
+                        <div className="shrink-0 size-10 rounded-full flex items-center justify-center bg-gray-200/80 text-gray-500">
+                          <span className="material-symbols-outlined text-lg">history_edu</span>
                         </div>
-                        <p className="text-sm text-gray-700 mt-1.5 whitespace-pre-wrap leading-relaxed">{c.content}</p>
-                      </div>
-                    </li>
-                  ))}
+                        <div className="min-w-0 flex-1 rounded-xl px-4 py-2.5 border border-gray-100 bg-gray-50/50">
+                          <p className="text-sm text-gray-600 italic">{item.display_text ?? "Descriere modificată"}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {item.author_name} · <span className="tabular-nums">{formatDate(item.created_date)}</span>
+                          </p>
+                        </div>
+                      </li>
+                    ) : (
+                      <li key={item.source + "-" + item.comment_id} className="flex gap-3">
+                        <div className={"shrink-0 size-10 rounded-full flex items-center justify-center text-xs font-bold " + (item.source === "agent" ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-600")}>
+                          {item.source === "agent" ? "A" : "C"}
+                        </div>
+                        <div className={"min-w-0 flex-1 rounded-xl px-4 py-3 border " + (item.is_internal ? "bg-amber-50/80 border-amber-200/60" : "bg-gray-50/80 border-gray-100")}>
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-[#0e141b]">{item.author_name}</span>
+                            <span className="text-xs text-gray-500">{item.source === "agent" ? "Agent" : "Client"}</span>
+                            {item.is_internal && (
+                              <span className="text-xs font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">Intern</span>
+                            )}
+                            <span className="text-xs text-gray-400 tabular-nums">{formatDate(item.created_date)}</span>
+                            {canEditComment(item) && editingCommentId !== item.source + "-" + item.comment_id && (
+                              <button
+                                type="button"
+                                onClick={() => { setEditingCommentId(item.source + "-" + item.comment_id); setEditingCommentContent(item.content); }}
+                                className="text-xs font-medium text-primary hover:underline ml-auto"
+                              >
+                                Editează
+                              </button>
+                            )}
+                          </div>
+                          {editingCommentId === item.source + "-" + item.comment_id ? (
+                            <div className="mt-2 space-y-2">
+                              <textarea
+                                value={editingCommentContent}
+                                onChange={(e) => setEditingCommentContent(e.target.value)}
+                                rows={3}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm resize-y"
+                                disabled={saving}
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveComment(item.source + "-" + item.comment_id, editingCommentContent)}
+                                  disabled={saving}
+                                  className="px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg"
+                                >
+                                  Salvează
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setEditingCommentId(null); }}
+                                  disabled={saving}
+                                  className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg"
+                                >
+                                  Anulare
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-700 mt-1.5 whitespace-pre-wrap leading-relaxed">{item.content}</p>
+                          )}
+                        </div>
+                      </li>
+                    )
+                  )}
                 </ul>
               )}
               <form onSubmit={handleCommentSubmit} className="mt-4 pt-4 border-t border-gray-100">
@@ -500,7 +664,7 @@ function TicketView({
   );
 }
 
-type User = { role: "client" | "agent"; email: string; name: string };
+type User = { id: number; role: "client" | "agent"; email: string; name: string };
 
 export default function TicketDetailPage() {
   const params = useParams();
@@ -563,10 +727,12 @@ export default function TicketDetailPage() {
   }
 
   const role = user?.role ?? "client";
+  const userId = user?.id ?? null;
   return (
     <TicketView
       data={data}
       userRole={role}
+      userId={userId}
       lookup={lookup}
       onRefresh={() => {
         fetch("/api/tickets/" + id)

@@ -153,6 +153,18 @@ CREATE TABLE TickLy.comment_agent (
     CONSTRAINT fk_comment_agent_agent FOREIGN KEY (agent_id) REFERENCES TickLy.agent(agent_id) ON DELETE CASCADE
 );
 
+CREATE TABLE TickLy.ticket_history (
+    history_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ticket_id NUMBER NOT NULL,
+    event_type VARCHAR2(50) NOT NULL,
+    created_date DATE DEFAULT SYSDATE NOT NULL,
+    created_by_role VARCHAR2(10) NOT NULL,
+    created_by_id NUMBER NOT NULL,
+    author_name VARCHAR2(200),
+    display_text VARCHAR2(500),
+    CONSTRAINT fk_ticket_history_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket(ticket_id) ON DELETE CASCADE
+);
+
 CREATE TABLE TickLy.kb_article (
     kb_article_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     agent_id NUMBER NOT NULL,

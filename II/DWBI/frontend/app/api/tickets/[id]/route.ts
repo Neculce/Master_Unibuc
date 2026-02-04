@@ -170,6 +170,7 @@ export async function GET(
 }
 
 type PatchBody = {
+  titlu?: string;
   descriere?: string | null;
   status_id?: number;
   prioritate_id?: number;
@@ -206,15 +207,31 @@ export async function PATCH(
 
   try {
     await runQuery(async (conn) => {
-      if (body.descriere !== undefined) {
-        const ownTicketCheck = await conn.execute(
-          "SELECT client_id FROM TickLy.ticket WHERE ticket_id = :id",
-          [id]
-        );
-        const rows = (ownTicketCheck.rows as Record<string, unknown>[]) || [];
-        if (rows.length === 0) return;
-        const ticketClientId = rows[0].CLIENT_ID != null ? Number(rows[0].CLIENT_ID) : null;
-        if (!isAgent && ticketClientId !== session.id) return;
+      const ownTicketCheck = await conn.execute(
+        "SELECT client_id FROM TickLy.ticket WHERE ticket_id = :id",
+        [id]
+      );
+      const rows = (ownTicketCheck.rows as Record<string, unknown>[]) || [];
+      if (rows.length === 0) return;
+      const ticketClientId = rows[0].CLIENT_ID != null ? Number(rows[0].CLIENT_ID) : null;
+      const canEditTicket = isAgent || ticketClientId === session.id;
+
+      if (body.titlu !== undefined && canEditTicket) {
+        const newTitlu = (body.titlu ?? "").trim() || null;
+        if (newTitlu != null) {
+          await conn.execute(
+            `UPDATE TickLy.ticket SET titlu = :titlu, data_ultima_actualizare = SYSDATE WHERE ticket_id = :id`,
+            { id, titlu: newTitlu }
+          );
+          await conn.execute(
+            `INSERT INTO TickLy.ticket_history (ticket_id, event_type, created_by_role, created_by_id, author_name, display_text)
+             VALUES (:id, 'TITLU_MODIFICAT', :role, :author_id, :author_name, 'Titlul a fost modificat')`,
+            { id, role: session.role, author_id: session.id, author_name: session.name || "" }
+          );
+        }
+      }
+
+      if (body.descriere !== undefined && canEditTicket) {
         const newDesc = body.descriere === null || body.descriere === "" ? null : body.descriere;
         await conn.execute(
           `UPDATE TickLy.ticket SET descriere = :descriere, data_ultima_actualizare = SYSDATE WHERE ticket_id = :id`,

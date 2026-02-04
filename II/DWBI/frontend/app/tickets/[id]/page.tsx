@@ -139,6 +139,8 @@ function TicketView({
 }) {
   const { ticket, comments, attachments } = data;
   const timeline = data.timeline ?? comments.map((c) => ({ type: "comment" as const, ...c }));
+  const commentItems = timeline.filter((t): t is Extract<typeof timeline[0], { type: "comment" }> => t.type === "comment");
+  const historyItems = timeline.filter((t): t is Extract<typeof timeline[0], { type: "history" }> => t.type === "history");
   const hasAgent = ticket.agent_nume != null || ticket.agent_email != null;
   const isAgent = userRole === "agent";
   const [saving, setSaving] = useState(false);
@@ -146,12 +148,17 @@ function TicketView({
   const [commentSending, setCommentSending] = useState(false);
   const [commentInternal, setCommentInternal] = useState(false);
   const [editField, setEditField] = useState<EditField>(null);
+  const [editingTitlu, setEditingTitlu] = useState(false);
+  const [titluDraft, setTitluDraft] = useState(ticket.titlu);
   const [editingDescriere, setEditingDescriere] = useState(false);
   const [descriereDraft, setDescriereDraft] = useState(ticket.descriere ?? "");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentContent, setEditingCommentContent] = useState("");
   const ticketId = ticket.ticket_id;
 
+  useEffect(() => {
+    if (!editingTitlu) setTitluDraft(ticket.titlu);
+  }, [ticket.titlu, editingTitlu]);
   useEffect(() => {
     if (!editingDescriere) setDescriereDraft(ticket.descriere ?? "");
   }, [ticket.descriere, editingDescriere]);
@@ -215,6 +222,34 @@ function TicketView({
     },
     [ticketId, commentText, commentSending, commentInternal, isAgent, onRefresh]
   );
+
+  const handleSaveTitlu = useCallback(() => {
+    const newVal = titluDraft.trim();
+    if (!newVal) {
+      alert("Titlul nu poate fi gol.");
+      return;
+    }
+    if (newVal === ticket.titlu) {
+      setEditingTitlu(false);
+      return;
+    }
+    setSaving(true);
+    fetch("/api/tickets/" + ticketId, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ titlu: newVal }),
+    })
+      .then((r) => {
+        if (!r.ok) return r.json().then((j: { error?: string }) => Promise.reject(new Error(j.error || "Update failed")));
+        onRefresh();
+        setEditingTitlu(false);
+      })
+      .catch((e) => {
+        console.error(e);
+        alert(e instanceof Error ? e.message : "Update failed");
+      })
+      .finally(() => setSaving(false));
+  }, [ticketId, ticket.titlu, titluDraft, onRefresh]);
 
   const handleSaveDescriere = useCallback(() => {
     const newVal = descriereDraft.trim() || null;
@@ -285,7 +320,48 @@ function TicketView({
           {/* Card titlu + descriere */}
           <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden">
             <div className="px-6 py-5">
-              <h1 className="text-xl font-bold text-[#0e141b]">{ticket.titlu}</h1>
+              {editingTitlu ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={titluDraft}
+                    onChange={(e) => setTitluDraft(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 text-xl font-bold text-[#0e141b] focus:bg-white focus:border-primary/40"
+                    placeholder="Titlul ticketului"
+                    disabled={saving}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveTitlu}
+                      disabled={saving}
+                      className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+                    >
+                      Salvează
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setEditingTitlu(false); setTitluDraft(ticket.titlu); }}
+                      disabled={saving}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200"
+                    >
+                      Anulare
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-xl font-bold text-[#0e141b]">{ticket.titlu}</h1>
+                  <button
+                    type="button"
+                    onClick={() => { setEditingTitlu(true); setTitluDraft(ticket.titlu); }}
+                    className="mt-2 text-sm font-medium text-gray-600 hover:text-gray-800 flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-lg">edit</span>
+                    Editează titlul
+                  </button>
+                </>
+              )}
               <div className="mt-4 pt-4 border-t border-gray-100">
                 {editingDescriere ? (
                   <div className="space-y-2">
@@ -325,7 +401,7 @@ function TicketView({
                     <button
                       type="button"
                       onClick={() => { setEditingDescriere(true); setDescriereDraft(ticket.descriere ?? ""); }}
-                      className="mt-2 text-sm font-medium text-primary hover:underline flex items-center gap-1"
+                      className="mt-2 text-sm font-medium text-gray-600 hover:text-gray-800 flex items-center gap-1.5"
                     >
                       <span className="material-symbols-outlined text-lg">edit</span>
                       Editează descrierea
@@ -336,39 +412,26 @@ function TicketView({
             </div>
           </div>
 
-          {/* Card Comentarii + timeline + formular */}
+          {/* Card Comentarii + formular */}
           <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-primary/5">
               <h2 className="text-sm font-semibold text-[#0e141b] flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg text-primary">chat_bubble_outline</span>
                 Comentarii
-                {timeline.length > 0 && (
-                  <span className="text-xs font-normal text-gray-500">({timeline.filter((t) => t.type === "comment").length})</span>
+                {commentItems.length > 0 && (
+                  <span className="text-xs font-normal text-gray-500">({commentItems.length})</span>
                 )}
               </h2>
             </div>
             <div className="px-6 py-5">
-              {timeline.length === 0 ? (
+              {commentItems.length === 0 ? (
                 <p className="text-sm text-gray-500 flex items-center gap-2.5 py-2">
                   <span className="material-symbols-outlined text-lg text-gray-400">forum</span>
                   Niciun comentariu încă.
                 </p>
               ) : (
                 <ul className="space-y-4">
-                  {timeline.map((item) =>
-                    item.type === "history" ? (
-                      <li key={"h-" + item.history_id} className="flex gap-3">
-                        <div className="shrink-0 size-10 rounded-full flex items-center justify-center bg-gray-200/80 text-gray-500">
-                          <span className="material-symbols-outlined text-lg">history_edu</span>
-                        </div>
-                        <div className="min-w-0 flex-1 rounded-xl px-4 py-2.5 border border-gray-100 bg-gray-50/50">
-                          <p className="text-sm text-gray-600 italic">{item.display_text ?? "Descriere modificată"}</p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {item.author_name} · <span className="tabular-nums">{formatDate(item.created_date)}</span>
-                          </p>
-                        </div>
-                      </li>
-                    ) : (
+                  {commentItems.map((item) => (
                       <li key={item.source + "-" + item.comment_id} className="flex gap-3">
                         <div className={"shrink-0 size-10 rounded-full flex items-center justify-center text-xs font-bold " + (item.source === "agent" ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-600")}>
                           {item.source === "agent" ? "A" : "C"}
@@ -385,7 +448,7 @@ function TicketView({
                               <button
                                 type="button"
                                 onClick={() => { setEditingCommentId(item.source + "-" + item.comment_id); setEditingCommentContent(item.content); }}
-                                className="text-xs font-medium text-primary hover:underline ml-auto"
+                                className="text-xs font-medium text-gray-600 hover:text-gray-800 ml-auto"
                               >
                                 Editează
                               </button>
@@ -424,8 +487,7 @@ function TicketView({
                           )}
                         </div>
                       </li>
-                    )
-                  )}
+                  ))}
                 </ul>
               )}
               <form onSubmit={handleCommentSubmit} className="mt-4 pt-4 border-t border-gray-100">
@@ -656,6 +718,38 @@ function TicketView({
               <InfoRow label="Data creare" value={<span className="tabular-nums">{formatDate(ticket.data_creare)}</span>} />
               <InfoRow label="Data rezolvare" value={<span className="tabular-nums">{formatDate(ticket.data_rezolvare)}</span>} />
               <InfoRow label="Data închidere" value={<span className="tabular-nums">{formatDate(ticket.data_inchidere)}</span>} />
+            </div>
+          </div>
+
+          {/* Istoric ticket */}
+          <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+              <h2 className="text-sm font-semibold text-[#0e141b] flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg text-primary">history_edu</span>
+                Istoric ticket
+                {historyItems.length > 0 && (
+                  <span className="text-xs font-normal text-gray-500">({historyItems.length})</span>
+                )}
+              </h2>
+            </div>
+            <div className="px-5 py-4 max-h-[280px] overflow-y-auto">
+              {historyItems.length === 0 ? (
+                <p className="text-sm text-gray-500">Niciun eveniment încă.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {historyItems.map((h) => (
+                    <li key={"h-" + h.history_id} className="flex gap-2 text-sm">
+                      <span className="material-symbols-outlined text-gray-400 shrink-0 text-lg">edit_note</span>
+                      <div className="min-w-0">
+                        <p className="text-gray-700">{h.display_text ?? "Descriere modificată"}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {h.author_name} · <span className="tabular-nums">{formatDate(h.created_date)}</span>
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>

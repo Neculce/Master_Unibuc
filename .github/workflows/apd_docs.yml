@@ -41,8 +41,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cp II/APD/Proiect/docs/main.pdf II/APD/Proiect/docs/APD_Proiect.pdf
-          gh release delete sbd-docs-latest --yes 2>/dev/null || true
+          gh release delete apd-docs-latest --yes 2>/dev/null || true
           gh release create apd-docs-latest \
-            --title "APD Proiect (latest)" \
-            --notes "Proiect. Built from ${{ github.ref_name }} at ${{ github.sha }}." \
+            --title "APD Project (latest)" \
+            --notes "Project. Built from ${{ github.ref_name }} at ${{ github.sha }}." \
             II/APD/Proiect/docs/APD_Proiect.pdf

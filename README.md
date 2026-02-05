@@ -14,7 +14,7 @@ Small monorepo with coursework, labs and projects from the **University of Bucha
 ---
 
 ### Year 2
-- **`APD` – Algoritmi Paraleli și Distribuiți**
+- **`APD` – 'Sisteme Distribuite (SD)' - Opțional - Algoritmi Paraleli și Distribuiți**
   - MPI / multithreading experiments, lab work, and small demos.
 - **`CC` – Cloud Computing**
   - Azure-based homeworks, simple dashboards, microservices, deployment scripts.

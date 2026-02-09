@@ -1,0 +1,126 @@
+\section{Algoritmi}
+
+\subsection{Algoritmul Serial de Referință}
+Pentru a demonstra eficiența soluției propuse, trebuie mai întâi să analizăm "standardul" din industrie: abordarea centralizată. Aceasta va servi drept punct de referință (baseline) pentru comparațiile ulterioare. \cite{eygster2003lightweight}
+
+În acest model clasic de tip Client-Server, există un singur "creier" al sistemului (Coordonatorul) care este responsabil de tot: colectează datele, le procesează și calculează starea globală.
+
+\begin{algorithm}[H]
+    \caption{Server}
+    \label{alg:server}
+    \begin{algorithmic}[1]
+        \State Initializează structura de date partajată $S$
+        \State \textbf{Paralel 1: Monitorizare}
+        \State \quad La fiecare $T$ secunde:
+        \State \quad \quad Calculează media tuturor valorilor prezente în $S$
+        \State \textbf{Paralel 2: Gestionare Clienți}
+        \State \quad Așteaptă conexiuni de la agenți
+        \State \quad Pentru fiecare mesaj primit de la clientul $C$:
+        \State \quad \quad Actualizează intrarea $S[C]$ cu noua valoare
+        \State \quad La deconectarea lui $C$:
+        \State \quad \quad Șterge intrarea $S[C]$ din structură
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \caption{Agent}
+    \label{alg:client}
+    \begin{algorithmic}[1]
+        \State \textbf{Buclă Infinită:}
+        \State \quad Încearcă conectarea la Server
+        \State \quad \textbf{Cât timp} conexiunea este activă:
+        \State \quad \quad Măsoară încărcarea CPU locală ($L$)
+        \State \quad \quad Trimite $L$ către Server
+        \State \quad \quad Așteaptă $T$ secunde
+        \State \quad \textbf{În caz de eroare conexiune:}
+        \State \quad \quad Așteaptă $R$ secunde și reia bucla
+    \end{algorithmic}
+\end{algorithm}
+
+Logica este secvențială și se desfășoară în trei pași simpli, repetați la fiecare ciclu de monitorizare:
+\begin{enumerate}
+    \item \textbf{Colectarea (Polling):} Serverul central contactează fiecare nod din rețea, unul câte unul (sau așteaptă să primească date de la ele), pentru a afla valoarea senzorilor (ex: load-ul CPU).
+    \item \textbf{Agregarea Serială:} Odată ce are datele, serverul le adună într-o sumă totală. Deoarece totul se întâmplă pe un singur procesor, efortul de calcul crește liniar cu numărul de noduri ($O(N)$).
+    \[ S_{total} = \sum_{i=1}^{N} v_i \]
+    \item \textbf{Calculul Mediei:} La final, serverul împarte suma la numărul de noduri pentru a obține media:
+    \[ \mu = \frac{S_{total}}{N} \]
+\end{enumerate}
+
+Deși matematic este perfectă (avem o medie exactă, fără erori), în practică, această arhitectură este de facto nepotrivită pentru sistemele mari: \cite{van2017distributed}
+
+\begin{itemize}
+    \item \textbf{Punct Unic de Eșec (SPOF):} Serverul central este vital. Dacă acesta se defectează sau se restartează, întregul sistem de monitorizare devine "orb" instantaneu. Nu există redundanță.
+    \item \textbf{Gâtuirea Rețelei (Bottleneck):} Imaginați-vă 10.000 de noduri încercând să trimită date către un singur server în același timp. Lățimea de bandă a serverului se saturează, pachetele se pierd, iar latența crește exponențial. Serverul nu poate procesa datele suficient de repede.
+\end{itemize}
+
+Tocmai aceste limitări structurale ne motivează să adoptăm algoritmul Gossip (prezentat în secțiunea următoare), care elimină nevoia unui coordonator central.
+
+\subsection{Algoritmul Distribuit: Abordarea SPMD}
+Ca răspuns la limitările modelului centralizat, propunem o schimbare fundamentală de paradigmă: trecerea la o arhitectură distribuită, bazată pe modelul \textit{SPMD (Single Program, Multiple Data)}.
+
+În acest scenariu, eliminăm complet "creierul central". Nu mai există un Coordonator și niciun nod nu este special. În schimb, fiecare nod din rețea rulează exact același cod (același script Python), comportându-se simultan atât ca un client (care trimite date), cât și ca un server (care primește date).
+
+Deoarece nu există o coadă globală de așteptare, procesul este paralelizat masiv. Fiecare nod execută independent, într-o buclă infinită, următorii pași:
+
+\begin{enumerate}
+    \item \textbf{Monitorizare și Injecție (Delta):} Înainte de a comunica cu alții, nodul își citește propriul senzor (ex: CPU load). Dacă valoarea s-a schimbat față de ultima citire, diferența (delta) este adăugată la estimarea sa curentă. Astfel, sistemul rămâne reactiv la schimbările locale. \cite{spanos2005dynamic}
+    \item \textbf{Selectarea Partenerului (Random Peer Sampling):} Nodul alege aleatoriu un "partener de bârfa" din lista sa de vecini. Acest pas probabilistic este cheia vitezei: nu trebuie să vorbim cu toată lumea, ci doar cu un vecin la întâmplare.
+    \item \textbf{Schimbul și Medierea (Push-Pull):} Cei doi parteneri își trimit reciproc valorile estimate ($v_i$ și $v_j$) și calculează noua medie locală: \cite{kempe2003gossip}
+    \[ v_i^{new} = v_j^{new} = \frac{v_i + v_j}{2} \]
+\end{enumerate}
+
+\begin{algorithm}[H]
+    \caption{Push-Pull Dynamic Average Consensus}
+    \label{alg:push-pull}
+    \begin{algorithmic}[1]
+        \State Inițializează lista de vecini conform topologiei
+        \State \textbf{Start Paralel: Thread Activ, Thread Pasiv}
+
+        \State \textbf{Thread 1: Activ}
+        \State \quad Măsoară încărcarea CPU curentă ($L_{curr}$)
+        \State \quad \textbf{Atomic:} Actualizează media cu diferența $(L_{curr} - L_{last})$
+        \State \quad Selectează aleatoriu un vecin $V$
+        \State \quad Trimite media locală către $V$ (PUSH)
+        \State \quad Primește media vecinului $V$ (PULL)
+        \State \quad \textbf{Atomic:} $Media \leftarrow (Media + Media_{vecin}) / 2$
+
+        \State \textbf{Thread 2: Pasiv}
+        \State \quad Așteaptă conexiune de la un inițiator
+        \State \quad Primește valoarea $Val_{in}$
+        \State \quad \quad \textbf{Atomic:} Salvează media curentă în $R$
+        \State \quad \quad \textbf{Atomic:} $Media \leftarrow (Media + Val_{in}) / 2$
+        \State \quad Trimite $R$ înapoi către inițiator
+    \end{algorithmic}
+\end{algorithm}
+
+\vspace{0.5em}
+\noindent \textbf{Notă:} Operațiile \textit{Atomic} sunt protejate de un \textbf{Mutex} pentru a evita conflictele. Astfel, ne asigurăm că firele de execuție nu scriu simultan în aceeași variabilă, fapt ce ar duce la pierderea datelor și la un calcul greșit al mediei.
+
+\vspace{0.5em}
+Această abordare transformă dezavantaje modelului serial în puncte forte:
+
+\begin{itemize}
+    \item \textbf{Eliminarea SPOF:} Deoarece toți sunt egali, dispariția unui nod (sau a 10 noduri) nu oprește sistemul. Restul rețelei continuă să funcționeze și să recalculeze media cu nodurile rămase active. Sistemul se "vindecă" singur.
+    \item \textbf{Scalabilitate Infinită:} Nu există bottleneck. Dacă adăugăm 1000 de noduri noi, traficul nu se concentrează într-un singur punct, ci se distribuie uniform în rețea. Fiecare nod consumă o lățime de bandă constantă, indiferent de mărimea rețelei.
+\end{itemize}
+
+În concluzie, deși algoritmul distribuit introduce o mică eroare de estimare (convergență asimptotică) față de calculul exact al serverului central, acesta câștigă detașat la capitolele viteză, reziliență și capacitatea de a funcționa la scară largă.
+
+\subsection{Analiza Comportamentului la Eșecul Nodurilor (Mass Loss)}
+În timpul testelor de stres, în care noduri aleatoare au fost deconectate brusc din rețea (simulând o pană de curent sau un crash al sistemului de operare), a fost observat un fenomen interesant: în anumite scenarii, media estimată a clusterului a coborât sub zero, ajungând la valori negative, deși încărcarea CPU este o mărime strict pozitivă.
+
+\textbf{Cauza Fenomenului:}
+Acest comportament este cauzat de interacțiunea dintre mecanismul de \textit{Delta Injection} și pierderea bruscă a unui nod care deținea o parte din "masa" totală a sistemului.
+Să considerăm următorul scenariu:
+\begin{enumerate}
+    \item Nodul A are o încărcare de 100\% și o partajează prin Gossip cu Nodul B. Ambii ajung la o medie de 50\%.
+    \item Matematic, Nodul A a "delegat" 50 de unități către Nodul B.
+    \item Nodul B se defectează subit și părăsește rețeaua, luând cu el cele 50 de unități. Acestea sunt pierdute definitiv (Mass Loss).
+    \item Ulterior, încărcarea Nodului A scade la 0\%. Mecanismul Delta Injection calculează diferența: $0 - 100 = -100$.
+    \item Nodul A aplică această diferență negativă asupra mediei sale curente (care era 50\%): 
+    \[ \text{Medie} = 50 + (-100) = -50 \]
+\end{enumerate}
+
+Protocolul standard \textit{Push-Sum} fără mecanisme auxiliare (precum \textit{Weight Management} sau detecția avansată a eșecului) nu poate garanta conservarea masei în cazul ieșirii necontrolate a nodurilor din rețea. Aceasta reprezintă o limitare cunoscută a algoritmilor de consens simpli. \cite{kempe2003gossip}
+
+Pentru un mediu de producție critic, algoritmul ar necesita o extensie de tip "Restart/Reset" la detectarea izolării sau implementarea unui mecanism de \textit{Push-Sum cu Greutăți} (Weighted Gossip), care ar corecta automat raportul sumei chiar și la pierderea unor pachete de date. \cite{kempe2003gossip}

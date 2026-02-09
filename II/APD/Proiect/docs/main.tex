@@ -28,6 +28,8 @@
 
 \usepackage{amsmath}
 \usepackage{mathtools}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage[warnings-off={mathtools-colon,mathtools-overbracket}]{unicode-math}
 \newcommand{\bigO}[1]{\symcal{O}\left(#1\right)}
 \DeclarePairedDelimiter\abs{\lvert}{\rvert}
@@ -60,6 +62,7 @@
     sorting=nty,
     backend=biber
 ]{biblatex}
+\addbibresource{bibliography.bib}
 
 \usepackage[
     colorlinks,
@@ -68,21 +71,49 @@
     urlcolor={blue}
 ]{hyperref}
 
+\usepackage{titling}
+\pretitle{\begin{center}\LARGE\bfseries}
+\posttitle{\par\end{center}\vskip 0.5em}
+\preauthor{\begin{center}\normalsize}
+\postauthor{\end{center}}
+\predate{\begin{center}\normalsize}
+\postdate{\end{center}}
+
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small \textit{Algoritmi Paraleli și Distribuiți 2025-2026}}
-\fancyhead[R]{\small \textit{Proiect Semestrial}}
+\fancyhead[L]{\small \textit{Algoritmi Paraleli și Distribuiți}}
+\fancyhead[R]{\small \textit{APD 2026}}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.5pt}
+
+% Titlul „Rezumat” centrat în coloană
+\makeatletter
+\renewenvironment{abstract}{%
+  \if@twocolumn
+    \begin{center}\textbf{\abstractname}\end{center}\par\vspace{0.5em}%
+  \else
+    \small
+    \begin{center}%
+      \bfseries \abstractname\vspace{-.5em}\vspace{\z@}%
+    \end{center}%
+    \quotation
+  \fi
+}{%
+  \if@twocolumn
+  \else
+    \endquotation
+  \fi
+}
+\makeatother
 
 \title{\textbf{Monitorizare Distribuită în Timp Real prin Protocolul Gossip}\\
 \large Analiză și Implementare a Protocolului Simetric Push-Pull}
 
 \author{
-    \textbf{Murariu Andrei-Stefanel} \\
-    \textit{Facultatea de Matematică și Informatică} \\
-    \textit{Universitatea din București} \\
+    \href{https://www.linkedin.com/in/andrei-murariu-83317b177/}{\textbf{Murariu Andrei-Stefanel}} \\
+    \textit{Facultatea de Matematică și Informatică, Universitatea din București} \\
+    \textit{București, România} \\
     \texttt{andrei-stefanel.murariu@s.unibuc.ro}
 }
 \date{\today}
@@ -92,15 +123,15 @@
 \twocolumn[
   \begin{@twocolumnfalse}
     \maketitle
-    \begin{abstract}
-        \textit{Lorem ipsum}
-        \vspace{1cm}
-    \end{abstract}
   \end{@twocolumnfalse}
 ]
 
+\input{section/0-abstract.tex}
 \input{section/1-intro.tex}
+\input{section/2-background.tex}
+\input{section/3-algorithms.tex}
+\input{section/4-analysis.tex}
+\printbibliography[heading=bibintoc]
 
-% \printbibliography
 
 \end{document}

@@ -1,0 +1,45 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{Protocoale de tip Gossip}
+Protocoalele de tip Gossip (sau algoritmi epidemici) funcționează exact ca bârfa într-un grup social: informația se răspândește de la un om la altul, fără să existe un "șef" care să anunțe pe toată lumea. În termeni tehnici, nu avem un server central; fiecare nod își alege periodic un partener aleatoriu și fac schimb de date.
+
+Conform lui Shah \cite{shah2009gossip}, ca să putem numi un algoritm "Gossip" eficient, trebuie să bifăm patru condiții: 
+\begin{itemize} 
+    \item \textbf{Localitate:} Un nod știe doar de vecinii lui direcți. Nu are nevoie de harta întregii rețele.
+    \item \textbf{Simplitate computațională și de stocare:} Ar fi ineficient ca un nod să descarce datele de la toate celelalte mii de noduri. Memoria și procesarea trebuie să rămână la un nivel minim.
+    \item \textbf{Asincronicitate:} Algoritmul este asincron. Nodurile nu trebuie să aibă ceasurile perfect aliniate sau să acționeze toate în aceeași milisecundă.
+    \item \textbf{Toleranță la erori:} Dacă un nod pică sau apare unul nou în timp ce rulăm algoritmul, rezultatul final nu trebuie să fie dat peste cap.
+\end{itemize}
+Pe scurt, vrem să calculăm o valoare globală (cum ar fi media) prin interacțiuni simple și rapide între vecini.
+
+\subsection{Consensul Distribuit (Average Consensus)}
+Problema principală în sistemele distribuite este "consensul": cum facem ca toate nodurile să cadă de acord asupra unei valori? În proiectul de față, ne interesează "Average Consensus", adică toate nodurile să afle media aritmetică a valorilor din rețea. 
+
+Matematic, dacă fiecare nod $i$ pleacă de la o valoare $x_i(0)$, scopul e ca, după mai mulți pași de comunicare, toți să ajungă la aceeași valoare medie \cite{spanos2005dynamic}:
+\[ \lim_{t \to \infty} x_i(t) = \frac{1}{n} \sum_{j=1}^{n} x_j(0) \]
+
+\subsection{Uniform Gossip și Conservarea Masei}
+Pentru a atinge acest consens, am folosit modelul \textbf{Uniform Gossip}, descris de Kempe et al. \cite{kempe2003gossip}. Ideea e simplă: la fiecare pas, un nod își alege un partener total aleatoriu (cu probabilitatea $1/n$). Asta asigură că informația se amestecă bine în toată rețeaua.
+
+Datorită proprietății de \textbf{Conservare a Masei} (Mass Conservation), suma totală a valorilor din sistem rămâne constantă, chiar dacă valorile individuale se schimbă. \cite{kempe2003gossip}
+
+Dacă nodul $i$ și nodul $j$ fac media valorilor lor:
+\[ v_i(t+1) = v_j(t+1) = \frac{v_i(t) + v_j(t)}{2} \]
+...suma lor rămâne aceeași:
+\[ v_i(t+1) + v_j(t+1) = v_i(t) + v_j(t) \]
+Practic, nu pierdem și nu inventăm informație, doar o redistribuim până se uniformizează totul.
+
+\subsection{Dynamic Consensus și Delta Injection}
+În realitate, serverele nu sunt statice. Spre exemplu, încărcarea procesorului fluctuează continuu. Algoritmii clasici ar trebui restartați la fiecare mică schimbare, ceea ce e ineficient.
+Soluția este \textit{Dynamic Average Consensus}: în loc să suprascriem valoarea, lucrăm cu diferența (delta) dintre măsurătoarea nouă și cea veche. Asta ne permite să "injectăm" schimbarea în sistem din mers, fără să oprim comunicarea \cite{spanos2005dynamic}.
+
+\subsection{Topologii de comunicare}
+Viteza cu care se propagă informația depinde mult de cum sunt legate nodurile între ele (topologia):
+\begin{itemize} 
+    \item \textbf{Topologia Inel (Ring):} Nodurile sunt legate într-un cerc. E simplu de făcut (fiecare are 2 vecini), dar dacă se strică un nod, se rupe lanțul și informația nu mai circulă.
+    \item \textbf{Topologia Stea (Star):} Toate sunt legate la un nod central. E rapid, dar periculos: dacă pică centrul (Hub-ul), moare toată rețeaua. Asta contrazice ideea de sistem descentralizat.
+    \item \textbf{Topologia Completă (Mesh):} Oricine poate vorbi cu oricine. Este cea mai robustă variantă și asigură cel mai scurt drum pentru informație.
+\end{itemize}
+
+Trăgând linie, pentru un protocol Gossip, \textbf{topologia Mesh} este cea mai bună alegere: e rapidă și rezistă la defecțiuni. Topologia Star nu se potrivește pentru că introduce un punct unic de eșec (SPOF), iar Inelul este prea lent și vulnerabil (un nod defect blochează tot fluxul).

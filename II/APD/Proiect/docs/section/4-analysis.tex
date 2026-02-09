@@ -1,0 +1,46 @@
+\section{Analiză Teoretică și Discuții}
+\label{sec:analysis}
+
+În această secțiune, analizăm performanța algoritmului distribuit propus (Push-Pull Dynamic Average Consensus) comparativ cu soluția serială, urmărind criteriile de eficiență, scalabilitate și impactul topologiei.
+
+\subsection{Complexitate Timp și Mesaje}
+Unul dintre avantajele majore ale algoritmilor Gossip este reducerea complexității temporale în rețelele mari.
+
+\begin{itemize}
+    \item \textbf{Convergența:}
+    \begin{itemize}
+        \item \textbf{Algoritmul Serial:} Necesită $O(N)$ timp per ciclu, deoarece serverul central trebuie să proceseze secvențial $N$ mesaje. Timpul crește liniar cu numărul de noduri.
+        \item \textbf{Algoritmul Gossip:} Conform teoriei demonstrate de Kempe \cite{kempe2003gossip}, într-o topologie completă (sau random graph), timpul necesar pentru ca eroarea estimării să scadă la jumătate este de ordinul $O(\log N)$. Aceasta înseamnă o convergență exponențială: dacă dublăm numărul de noduri, timpul de convergență crește doar cu o valoare constantă mică.
+    \end{itemize}
+    
+    \item \textbf{Mesaje:}
+    \begin{itemize}
+        \item În abordarea \textbf{Serială}, serverul central gestionează $2N$ mesaje pe ciclu (Request + Reply pentru fiecare nod), ceea ce duce la congestie.
+        \item În abordarea \textbf{Gossip}, fiecare nod trimite un număr constant de mesaje per unitatea de timp (de obicei 1 mesaj către 1 vecin). Deși numărul total de mesaje în rețea este $O(N)$, acestea sunt distribuite uniform pe toate link-urile, evitând gâtuirea rețelei.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Speedup și Eficiență}
+Accelerația (Speedup) măsoară cât de mult câștigăm prin paralelizare. Deoarece algoritmul Gossip rulează simultan pe toate cele $N$ noduri (model SPMD), capacitatea totală de procesare a sistemului crește odată cu dimensiunea rețelei.
+
+\begin{itemize}
+    \item \textbf{Utilizarea Resurselor:} Spre deosebire de modelul Client-Server unde serverul stă la 100\% CPU iar clienții la 1\% (așteptând), în Gossip efortul este partajat egal. Eficiența este maximă deoarece nu există timpi morți cauzați de așteptarea la coadă la un coordonator central.
+    \item \textbf{Reducerea Erorii:} Eficiența algoritmului este vizibilă în viteza cu care media estimată se apropie de media reală. În testele efectuate, eroarea scade cu un factor constant la fiecare rundă de comunicare ($e^{-t}$), fenomen numit "convergență geometrică".
+\end{itemize}
+
+\subsection{Avantaje și Dezavantaje la Variația Numărului de Noduri}
+
+\subsection{Particularizare pe Topologii}
+Performanța algoritmului este dictată strict de structura grafului de conexiuni ($G=(V,E)$). În cadrul proiectului, am analizat două cazuri extreme:
+
+\textbf{1. Topologia Inel (Ring):}
+\begin{itemize}
+    \item \textit{Descriere:} Fiecare nod comunică doar cu vecinii stânga/dreapta ($grad=2$).
+    \item \textit{Performanță:} Slabă. Convergența este lentă, de ordinul $O(N^2)$. Informația trebuie să parcurgă fizic tot lanțul pentru a ajunge de la un capăt la altul.
+\end{itemize}
+
+\textbf{2. Topologia Completă (Mesh):}
+\begin{itemize}
+    \item \textit{Descriere:} Orice nod poate contacta orice alt nod.
+    \item \textit{Performanță:} Excelentă. Convergența este de ordinul $O(\log N)$. Diametrul mic al grafului permite informației să se propage "viral" în câțiva pași.
+\end{itemize}

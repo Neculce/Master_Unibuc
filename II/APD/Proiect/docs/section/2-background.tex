@@ -6,10 +6,10 @@ Protocoalele de tip Gossip (sau algoritmi epidemici) funcționează exact ca bâ
 
 Conform lui Shah \cite{shah2009gossip}, ca să putem numi un algoritm "Gossip" eficient, trebuie să bifăm patru condiții: 
 \begin{itemize} 
-    \item \textbf{Doar discuții locale:} Un nod știe doar de vecinii lui direcți. Nu are nevoie de harta întregii rețele.
-    \item \textbf{Nu ținem minte tot:} Ar fi ineficient ca un nod să descarce datele de la toate celelalte mii de noduri. Memoria și procesarea trebuie să rămână la un nivel minim.
-    \item \textbf{Fără sincronizare perfectă:} Algoritmul este asincron. Nodurile nu trebuie să aibă ceasurile perfect aliniate sau să acționeze toate în aceeași milisecundă.
-    \item \textbf{Rezistență la schimbări:} Dacă un nod pică sau apare unul nou în timp ce rulăm algoritmul, rezultatul final nu trebuie să fie dat peste cap.
+    \item \textbf{Localitate:} Un nod știe doar de vecinii lui direcți. Nu are nevoie de harta întregii rețele.
+    \item \textbf{Simplitate computațională și de stocare:} Ar fi ineficient ca un nod să descarce datele de la toate celelalte mii de noduri. Memoria și procesarea trebuie să rămână la un nivel minim.
+    \item \textbf{Asincronicitate:} Algoritmul este asincron. Nodurile nu trebuie să aibă ceasurile perfect aliniate sau să acționeze toate în aceeași milisecundă.
+    \item \textbf{Toleranță la erori:} Dacă un nod pică sau apare unul nou în timp ce rulăm algoritmul, rezultatul final nu trebuie să fie dat peste cap.
 \end{itemize}
 Pe scurt, vrem să calculăm o valoare globală (cum ar fi media) prin interacțiuni simple și rapide între vecini.
 

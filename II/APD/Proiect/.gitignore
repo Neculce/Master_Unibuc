@@ -2,6 +2,7 @@
 docs/*.aux
 docs/*.log
 docs/*.out
+docs/*.bbl
 docs/*.toc
 docs/*.fls
 docs/*.fdb_latexmk

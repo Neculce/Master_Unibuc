@@ -1,2 +1,16 @@
 \section{Introducere}
 \label{sec:intro}
+
+în contextul actual, unde IoT (Internet of Things) se tot expandează, și se îmbunătățește conectivitatea, împreună cu îmbunătățirea arhitecturilor Cloud native, se pune problema monitorizării și controlului în timp real a sistemelor.
+În ultimii ani, aplicațiile sau/și serviciile au început să fie mutate în cloud, sub forma de Saas (Software as a Service), PaaS (Platform as a Service), IaaS (Infrastructure as a Service) sau servicii Serverless. Acestea sunt adesea implementate folosind arhitecturi distribuite, care necesită o monitorizare și control în timp real. 
+Problema se pune din cauza faptului că, există 2 cauze/riscuri majore:
+\begin{itemize}
+    \item \textbf{Cauza 1:} Monitorizarea ceea ce se folosește în prezent, unde sistemele sunt monitorizate de câtre un singur nod centralizat, care monitorizează toate sistemele prin intermediul unor agenți instalați pe fiecare nod din sistem. Serverul centralizat este singurul punct de monitorizare și control, care duce la "Single Point of Failure" (SPOF) al serverului, adică dacă serverul centralizat cade, sistemele râmân fără monitorizare.
+    \item \textbf{Cauza 2:} Când nodurile încep să fie multe, monitorizarea centralizată devine ineficientă, deoarece poate duce la probleme de latență și scalabilitate. Posibile soluții:
+    \begin{itemize}
+        \item \textbf{Scalabilitate verticală:} creșterea resurselor hardware a nodului de monitorizare.
+        \item \textbf{Scalabilitate orizontală:} adaugarea de noduri de monitorizare și configurare a acestora fiind proxy-uri pentru nodul centralizat de monitorizare. Asta implică o creștere a complexității de configurare și gestionare a nodurilor de monitorizare.
+    \end{itemize}
+\end{itemize}
+
+De aceea, în acest referat se va prezenta un protocol de gossip de tip simetric push-pull, care permite sistemelor să comunice între ele prin strategia \textbf{Dynamic Average Consensus} \cite{spanos2005dynamic}.

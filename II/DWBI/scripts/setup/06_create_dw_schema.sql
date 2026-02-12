@@ -1,7 +1,7 @@
 ALTER SESSION SET CONTAINER = orclpdb1;
 WHENEVER SQLERROR EXIT FAILURE;
 
-create table TickLy.dim_client (
+create table TickLy_DW.dim_client (
    client_key         number generated always as identity primary key,
    client_id          number not null,
    email              varchar2(100),
@@ -20,11 +20,10 @@ create table TickLy.dim_client (
    valid_to           date,
    is_current         char(1) default 'Y',
    load_date          date default sysdate,
-   constraint uk_dim_client_id unique ( client_id,
-                                        valid_from )
+   constraint uk_dim_client_id unique ( client_id, valid_from )
 );
 
-create table TickLy.dim_agent (
+create table TickLy_DW.dim_agent (
    agent_key      number generated always as identity primary key,
    agent_id       number not null,
    nume           varchar2(50),
@@ -39,11 +38,10 @@ create table TickLy.dim_agent (
    valid_to       date,
    is_current     char(1) default 'Y',
    load_date      date default sysdate,
-   constraint uk_dim_agent_id unique ( agent_id,
-                                       valid_from )
+   constraint uk_dim_agent_id unique ( agent_id, valid_from )
 );
 
-create table TickLy.dim_departament (
+create table TickLy_DW.dim_departament (
    departament_key number generated always as identity primary key,
    departament_id  number not null,
    nume            varchar2(100),
@@ -55,11 +53,10 @@ create table TickLy.dim_departament (
    valid_to        date,
    is_current      char(1) default 'Y',
    load_date       date default sysdate,
-   constraint uk_dim_departament_id unique ( departament_id,
-                                             valid_from )
+   constraint uk_dim_departament_id unique ( departament_id, valid_from )
 );
 
-create table TickLy.dim_categorie (
+create table TickLy_DW.dim_categorie (
    categorie_key          number generated always as identity primary key,
    categorie_id           number not null,
    nume                   varchar2(100),
@@ -72,7 +69,7 @@ create table TickLy.dim_categorie (
    constraint uk_dim_categorie_id unique ( categorie_id )
 );
 
-create table TickLy.dim_topic (
+create table TickLy_DW.dim_topic (
    topic_key       number generated always as identity primary key,
    topic_id        number not null,
    nume            varchar2(100),
@@ -88,7 +85,8 @@ create table TickLy.dim_topic (
    constraint uk_dim_topic_id unique ( topic_id )
 );
 
-create table TickLy.dim_tag (
+
+create table TickLy_DW.dim_tag (
    tag_key   number generated always as identity primary key,
    tag_id    number not null,
    nume      varchar2(50),
@@ -98,7 +96,7 @@ create table TickLy.dim_tag (
    constraint uk_dim_tag_id unique ( tag_id )
 );
 
-create table TickLy.dim_time (
+create table TickLy_DW.dim_time (
    date_key          number primary key,
    data_completa     date not null,
    an                number(4) not null,
@@ -110,58 +108,71 @@ create table TickLy.dim_time (
    saptamana_an      number(2) not null check ( saptamana_an between 1 and 53 ),
    zi_saptamana      number(1) not null check ( zi_saptamana between 1 and 7 ),
    zi_saptamana_nume varchar2(20) not null,
-   este_weekend      char(1) default 'N' check ( este_weekend in ( 'Y',
-                                                              'N' ) ),
-   este_sarbatoare   char(1) default 'N' check ( este_sarbatoare in ( 'Y',
-                                                                    'N' ) ),
+   este_weekend      char(1) default 'N' check ( este_weekend in ( 'Y', 'N' ) ),
+   este_sarbatoare   char(1) default 'N' check ( este_sarbatoare in ( 'Y', 'N' ) ),
    nume_sarbatoare   varchar2(100),
-   zi_lucratoare     char(1) default 'Y' check ( zi_lucratoare in ( 'Y',
-                                                               'N' ) ),
+   zi_lucratoare     char(1) default 'Y' check ( zi_lucratoare in ( 'Y', 'N' ) ),
    constraint uk_dim_time_data unique ( data_completa )
 );
 
-create table TickLy.fact_ticket (
-   fact_ticket_id              number generated always as identity primary key,
-   ticket_id                   number not null,
-   client_key                  number not null,
-   agent_key                   number not null,
-   departament_key             number not null,
-   categorie_key               number,
-   date_creare_key             number not null,
-   date_rezolvare_key          number,
-   date_inchidere_key          number,
-   status_id                   number not null,
-   status_nume                 varchar2(30) not null,
-   status_este_final           char(1),
-   status_ordine               number,
-   prioritate_id               number not null,
-   prioritate_nivel            number(1) not null,
-   prioritate_nume             varchar2(20) not null,
-   prioritate_timp_raspuns_ore number,
-   numar_ticketuri             number default 1,
-   timp_rezolvare_ore          number,
-   timp_raspuns_ore            number,
-   timp_rezolvare_minute       number,
-   rating_feedback             number(1) check ( rating_feedback between 1 and 5 ),
-   numar_comentarii            number default 0,
-   numar_comentarii_client     number default 0,
-   numar_comentarii_agent      number default 0,
-   numar_atasamente            number default 0,
-   cost_estimativ              number(10,2),
-   load_date                   date default sysdate,
-   constraint fk_fact_client foreign key ( client_key )
-      references TickLy.dim_client ( client_key ),
-   constraint fk_fact_agent foreign key ( agent_key )
-      references TickLy.dim_agent ( agent_key ),
-   constraint fk_fact_departament foreign key ( departament_key )
-      references TickLy.dim_departament ( departament_key ),
-   constraint fk_fact_categorie foreign key ( categorie_key )
-      references TickLy.dim_categorie ( categorie_key ),
-   constraint fk_fact_date_creare foreign key ( date_creare_key )
-      references TickLy.dim_time ( date_key ),
-   constraint fk_fact_date_rezolvare foreign key ( date_rezolvare_key )
-      references TickLy.dim_time ( date_key ),
-   constraint fk_fact_date_inchidere foreign key ( date_inchidere_key )
-      references TickLy.dim_time ( date_key ),
-   constraint uk_fact_ticket_id unique ( ticket_id )
+CREATE TABLE TickLy_DW.fact_ticket (
+   fact_ticket_id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+   ticket_id                   NUMBER NOT NULL,
+   
+   client_key                  NUMBER NOT NULL,
+   agent_key                   NUMBER NOT NULL,
+   departament_key             NUMBER NOT NULL,
+   categorie_key               NUMBER,
+   topic_key                   NUMBER NOT NULL,
+   date_creare_key             NUMBER NOT NULL,
+   date_rezolvare_key          NUMBER,
+   date_inchidere_key          NUMBER,
+   
+   status_id                   NUMBER NOT NULL,
+   status_nume                 VARCHAR2(30) NOT NULL,
+   status_este_final           CHAR(1),
+   prioritate_id               NUMBER NOT NULL,
+   prioritate_nume             VARCHAR2(20) NOT NULL,
+   
+   cost_estimativ              NUMBER(10,2),
+   timp_rezolvare_ore          NUMBER,
+   load_date                   DATE DEFAULT SYSDATE,
+   
+   /* setez FK-urile cu RELY DISABLE NOVALIDATE pentru ca datele vin deja validate in ETL din OLTP */
+   CONSTRAINT fk_fact_client FOREIGN KEY (client_key) REFERENCES TickLy_DW.dim_client (client_key)
+      RELY DISABLE NOVALIDATE,
+      
+   CONSTRAINT fk_fact_agent FOREIGN KEY (agent_key) REFERENCES TickLy_DW.dim_agent (agent_key)
+      RELY DISABLE NOVALIDATE,
+      
+   CONSTRAINT fk_fact_dept FOREIGN KEY (departament_key) REFERENCES TickLy_DW.dim_departament (departament_key)
+      RELY DISABLE NOVALIDATE,
+      
+   CONSTRAINT fk_fact_cat FOREIGN KEY (categorie_key) REFERENCES TickLy_DW.dim_categorie (categorie_key)
+      RELY DISABLE NOVALIDATE,
+      
+   CONSTRAINT fk_fact_topic FOREIGN KEY (topic_key) REFERENCES TickLy_DW.dim_topic (topic_key)
+      RELY DISABLE NOVALIDATE,
+      
+   CONSTRAINT fk_fact_dt_cr FOREIGN KEY (date_creare_key) REFERENCES TickLy_DW.dim_time (date_key)
+      RELY DISABLE NOVALIDATE,
+   
+   CONSTRAINT uk_fact_ticket_id UNIQUE (ticket_id)
 );
+
+CREATE TABLE TickLy_DW.bridge_ticket_tag (
+    bridge_id       NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    fact_ticket_id  NUMBER NOT NULL,
+    tag_key         NUMBER NOT NULL,
+    weight_factor   NUMBER DEFAULT 1, 
+    
+    CONSTRAINT fk_bridge_fact FOREIGN KEY (fact_ticket_id) 
+        REFERENCES TickLy_DW.fact_ticket (fact_ticket_id)
+        RELY DISABLE NOVALIDATE,
+        
+    CONSTRAINT fk_bridge_dim FOREIGN KEY (tag_key) 
+        REFERENCES TickLy_DW.dim_tag (tag_key)
+        RELY DISABLE NOVALIDATE
+);
+
+COMMIT;

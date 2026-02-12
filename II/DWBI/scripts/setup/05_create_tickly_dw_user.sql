@@ -23,4 +23,21 @@ GRANT QUERY REWRITE, GLOBAL QUERY REWRITE TO TickLy_DW;
 
 ALTER USER TickLy_DW QUOTA UNLIMITED ON USERS;
 
+GRANT SELECT ON TickLy.client TO TickLy_DW;
+GRANT SELECT ON TickLy.client_fizica TO TickLy_DW;
+GRANT SELECT ON TickLy.client_juridica TO TickLy_DW;
+GRANT SELECT ON TickLy.agent TO TickLy_DW;
+GRANT SELECT ON TickLy.departament TO TickLy_DW;
+GRANT SELECT ON TickLy.topic TO TickLy_DW;
+GRANT SELECT ON TickLy.topic_serviciu TO TickLy_DW;
+GRANT SELECT ON TickLy.topic_produs TO TickLy_DW;
+GRANT SELECT ON TickLy.categorie TO TickLy_DW;
+GRANT SELECT ON TickLy.tag TO TickLy_DW;
+GRANT SELECT ON TickLy.ticket TO TickLy_DW;
+GRANT SELECT ON TickLy.status TO TickLy_DW;
+GRANT SELECT ON TickLy.prioritate TO TickLy_DW;
+GRANT SELECT ON TickLy.ticket_agent TO TickLy_DW;
+GRANT SELECT ON TickLy.ticket_topic TO TickLy_DW;
+GRANT SELECT ON TickLy.ticket_tag TO TickLy_DW;
+
 COMMIT;

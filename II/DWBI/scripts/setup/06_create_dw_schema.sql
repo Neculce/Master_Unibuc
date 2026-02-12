@@ -119,7 +119,7 @@ create table TickLy_DW.dim_time (
 );
 
 CREATE TABLE TickLy_DW.fact_ticket (
-   fact_ticket_id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+   fact_ticket_id              NUMBER GENERATED ALWAYS AS IDENTITY,
    ticket_id                   NUMBER NOT NULL,
    client_key                  NUMBER NOT NULL,
    agent_key                   NUMBER NOT NULL,
@@ -137,6 +137,7 @@ CREATE TABLE TickLy_DW.fact_ticket (
    cost_estimativ              NUMBER(10,2),
    timp_rezolvare_ore          NUMBER,
    load_date                   DATE DEFAULT SYSDATE,
+   CONSTRAINT pk_fact_ticket PRIMARY KEY (fact_ticket_id) RELY,
    CONSTRAINT fk_fact_client FOREIGN KEY (client_key) REFERENCES TickLy_DW.dim_client (client_key) RELY DISABLE NOVALIDATE,
    CONSTRAINT fk_fact_agent FOREIGN KEY (agent_key) REFERENCES TickLy_DW.dim_agent (agent_key) RELY DISABLE NOVALIDATE,
    CONSTRAINT fk_fact_dept FOREIGN KEY (departament_key) REFERENCES TickLy_DW.dim_departament (departament_key) RELY DISABLE NOVALIDATE,

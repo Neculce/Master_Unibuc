@@ -6,29 +6,24 @@ INSERT INTO TickLy_DW.fact_ticket (
     client_key, agent_key, departament_key, categorie_key, topic_key,
     date_creare_key, date_rezolvare_key, date_inchidere_key,
     status_id, status_nume, status_este_final,
-    prioritate_id, prioritate_nume, prioritate_level,
+    prioritate_id, prioritate_nume,
     cost_estimativ, timp_rezolvare_ore,
     load_date
 )
 SELECT 
     t.ticket_id,
-    
     dc.client_key,
     da.agent_key,
     dd.departament_key,
     dcat.categorie_key,
     dtop.topic_key,
-    
     TO_NUMBER(TO_CHAR(t.data_creare, 'YYYYMMDD')),
     CASE WHEN t.data_rezolvare IS NOT NULL THEN TO_NUMBER(TO_CHAR(t.data_rezolvare, 'YYYYMMDD')) ELSE NULL END,
     CASE WHEN t.data_inchidere IS NOT NULL THEN TO_NUMBER(TO_CHAR(t.data_inchidere, 'YYYYMMDD')) ELSE NULL END,
-    
     s.status_id, s.nume, s.este_final,
-    p.prioritate_id, p.nume, p.nivel,
-    
+    p.prioritate_id, p.nume,
     dtop.pret, 
     t.timp_rezolvare_ore,
-    
     SYSDATE
 FROM TickLy.ticket t
 JOIN TickLy.status s ON t.status_id = s.status_id

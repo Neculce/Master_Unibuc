@@ -15,7 +15,7 @@ SELECT
     TO_CHAR(curr_date, 'Mon') as luna_abrev,
     TO_NUMBER(TO_CHAR(curr_date, 'DD')) as zi,
     TO_NUMBER(TO_CHAR(curr_date, 'IW')) as saptamana_an,
-    TO_NUMBER(TO_CHAR(curr_date, 'u')) as zi_saptamana,
+    TO_NUMBER(TO_CHAR(curr_date, 'D')) as zi_saptamana,
     TO_CHAR(curr_date, 'Day') as zi_saptamana_nume,
     CASE WHEN TO_CHAR(curr_date, 'DY', 'NLS_DATE_LANGUAGE=ENGLISH') IN ('SAT', 'SUN') THEN 'Y' ELSE 'N' END as este_weekend
 FROM (

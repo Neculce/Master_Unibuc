@@ -1,56 +1,27 @@
 ALTER SESSION SET CONTAINER = orclpdb1;
 WHENEVER SQLERROR EXIT FAILURE;
 
-INSERT INTO TickLy.dim_time (
-    date_key,
-    data_completa,
-    an,
-    trimestru,
-    luna,
-    luna_nume,
-    luna_abrev,
-    zi,
-    saptamana_an,
-    zi_saptamana,
-    zi_saptamana_nume,
-    este_weekend,
-    este_sarbatoare,
-    nume_sarbatoare,
-    zi_lucratoare
+INSERT INTO TickLy_DW.dim_time (
+    date_key, data_completa, an, trimestru, luna, luna_nume, luna_abrev, 
+    zi, saptamana_an, zi_saptamana, zi_saptamana_nume, este_weekend
 )
-SELECT
-    TO_NUMBER(TO_CHAR(d, 'YYYYMMDD')) AS date_key,
-    TRUNC(d) AS data_completa,
-    TO_NUMBER(TO_CHAR(d, 'YYYY')) AS an,
-    TO_NUMBER(TO_CHAR(d, 'Q')) AS trimestru,
-    TO_NUMBER(TO_CHAR(d, 'MM')) AS luna,
-    RTRIM(TO_CHAR(d, 'Month')) AS luna_nume,
-    TO_CHAR(d, 'Mon') AS luna_abrev,
-    TO_NUMBER(TO_CHAR(d, 'DD')) AS zi,
-    TO_NUMBER(TO_CHAR(d, 'IW')) AS saptamana_an,
-    TO_NUMBER(TO_CHAR(d, 'D')) AS zi_saptamana,
-    RTRIM(TO_CHAR(d, 'Day')) AS zi_saptamana_nume,
-    CASE WHEN TO_CHAR(d, 'D') IN ('1', '7') THEN 'Y' ELSE 'N' END AS este_weekend,
-    CASE WHEN (TO_CHAR(d, 'MMDD') IN ('0101', '0124', '0501', '1201', '1225'))
-              OR (TO_CHAR(d, 'MMDD') BETWEEN '0401' AND '0402')
-         THEN 'Y' ELSE 'N' END AS este_sarbatoare,
-    CASE
-        WHEN TO_CHAR(d, 'MMDD') = '0101' THEN 'Revelion'
-        WHEN TO_CHAR(d, 'MMDD') = '0124' THEN 'Unirea Principatelor'
-        WHEN TO_CHAR(d, 'MMDD') BETWEEN '0401' AND '0402' THEN 'Paste'
-        WHEN TO_CHAR(d, 'MMDD') = '0501' THEN 'Ziua Muncii'
-        WHEN TO_CHAR(d, 'MMDD') = '1201' THEN 'Ziua Națională'
-        WHEN TO_CHAR(d, 'MMDD') = '1225' THEN 'Crăciun'
-        ELSE NULL
-    END AS nume_sarbatoare,
-    CASE WHEN TO_CHAR(d, 'D') IN ('1', '7')
-              OR TO_CHAR(d, 'MMDD') IN ('0101', '0124', '0501', '1201', '1225')
-              OR (TO_CHAR(d, 'MMDD') BETWEEN '0401' AND '0402')
-         THEN 'N' ELSE 'Y' END AS zi_lucratoare
+SELECT 
+    TO_NUMBER(TO_CHAR(curr_date, 'YYYYMMDD')) as date_key,
+    curr_date as data_completa,
+    TO_NUMBER(TO_CHAR(curr_date, 'YYYY')) as an,
+    TO_NUMBER(TO_CHAR(curr_date, 'Q')) as trimestru,
+    TO_NUMBER(TO_CHAR(curr_date, 'MM')) as luna,
+    TO_CHAR(curr_date, 'Month') as luna_nume,
+    TO_CHAR(curr_date, 'Mon') as luna_abrev,
+    TO_NUMBER(TO_CHAR(curr_date, 'DD')) as zi,
+    TO_NUMBER(TO_CHAR(curr_date, 'IW')) as saptamana_an,
+    TO_NUMBER(TO_CHAR(curr_date, 'u')) as zi_saptamana,
+    TO_CHAR(curr_date, 'Day') as zi_saptamana_nume,
+    CASE WHEN TO_CHAR(curr_date, 'DY', 'NLS_DATE_LANGUAGE=ENGLISH') IN ('SAT', 'SUN') THEN 'Y' ELSE 'N' END as este_weekend
 FROM (
-    SELECT DATE '2020-01-01' + (LEVEL - 1) AS d
-    FROM DUAL
-    CONNECT BY LEVEL <= DATE '2030-12-31' - DATE '2020-01-01' + 1
+    SELECT TO_DATE('01-01-2020', 'DD-MM-YYYY') + LEVEL - 1 as curr_date
+    FROM dual
+    CONNECT BY LEVEL <= (TO_DATE('31-12-2030', 'DD-MM-YYYY') - TO_DATE('01-01-2020', 'DD-MM-YYYY') + 1)
 );
 
 COMMIT;

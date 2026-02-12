@@ -33,3 +33,5 @@ CREATE INDEX TickLy.idx_ticket_tag_rev ON TickLy.ticket_tag(tag_id);
 
 /* tabela atasament */
 CREATE INDEX TickLy.idx_atasament_ticket_id ON TickLy.atasament(ticket_id);
+
+COMMIT;

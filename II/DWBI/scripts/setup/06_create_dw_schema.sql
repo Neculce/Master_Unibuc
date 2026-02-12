@@ -109,9 +109,6 @@ create table TickLy_DW.dim_time (
    zi_saptamana      number(1) not null check ( zi_saptamana between 1 and 7 ),
    zi_saptamana_nume varchar2(20) not null,
    este_weekend      char(1) default 'N' check ( este_weekend in ( 'Y', 'N' ) ),
-   este_sarbatoare   char(1) default 'N' check ( este_sarbatoare in ( 'Y', 'N' ) ),
-   nume_sarbatoare   varchar2(100),
-   zi_lucratoare     char(1) default 'Y' check ( zi_lucratoare in ( 'Y', 'N' ) ),
    constraint uk_dim_time_data unique ( data_completa )
 );
 

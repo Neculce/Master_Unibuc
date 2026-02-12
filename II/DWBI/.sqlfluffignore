@@ -1,2 +1,2 @@
 # SQL*Plus @ includes; sqlfluff cannot lex these
-scripts/setup/06_run_etl_full_load.sql
+scripts/setup/08_run_etl_full_load.sql

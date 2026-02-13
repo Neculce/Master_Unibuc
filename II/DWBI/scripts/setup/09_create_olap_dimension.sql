@@ -16,15 +16,12 @@ CREATE DIMENSION TickLy_DW.dim_time_dim
    LEVEL luna_lvl        IS (TickLy_DW.dim_time.an, TickLy_DW.dim_time.luna)
    LEVEL trimestru_lvl   IS (TickLy_DW.dim_time.an, TickLy_DW.dim_time.trimestru)
    LEVEL an_lvl          IS (TickLy_DW.dim_time.an)
-   
    HIERARCHY commercial_hier (
       zi_lvl CHILD OF saptamana_lvl CHILD OF an_lvl
    )
-
    HIERARCHY calendar_hier (
       zi_lvl CHILD OF luna_lvl CHILD OF trimestru_lvl CHILD OF an_lvl
    )
-   
    ATTRIBUTE zi_lvl DETERMINES (
       TickLy_DW.dim_time.data_completa, 
       TickLy_DW.dim_time.zi_saptamana_nume,
@@ -38,11 +35,9 @@ CREATE DIMENSION TickLy_DW.dim_time_dim
 CREATE DIMENSION TickLy_DW.dim_topic_dim
    LEVEL topic_lvl IS (TickLy_DW.dim_topic.topic_key)
    LEVEL type_lvl IS (TickLy_DW.dim_topic.topic_type)
-   
    HIERARCHY topic_hier (
       topic_lvl CHILD OF type_lvl
    )
-   
    ATTRIBUTE topic_lvl DETERMINES (
       TickLy_DW.dim_topic.nume, 
       TickLy_DW.dim_topic.descriere,

@@ -6,11 +6,6 @@ on:
     paths:
       - 'II/DWBI/docs/analysis/**'
       - '.github/workflows/dwbi_docs.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'II/DWBI/docs/analysis/**'
-      - '.github/workflows/dwbi_docs.yml'
 
 defaults:
   run:
@@ -20,8 +15,7 @@ jobs:
   build-docs:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && contains(github.event.head_commit.message, 'DWBI')) ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.title, 'DWBI'))
+      (github.event_name == 'push' && contains(github.event.head_commit.message, 'DWBI'))
     permissions:
       contents: write
     steps:

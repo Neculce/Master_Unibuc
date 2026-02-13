@@ -6,18 +6,12 @@ on:
     paths:
       - 'II/APD/Proiect/docs/**'
       - '.github/workflows/apd_docs.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'II/APD/Proiect/docs/**'
-      - '.github/workflows/apd_docs.yml'
 
 jobs:
   build-docs:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && contains(github.event.head_commit.message, 'APD')) ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.title, 'APD'))
+      (github.event_name == 'push' && contains(github.event.head_commit.message, 'APD'))
     permissions:
       contents: write
     steps:

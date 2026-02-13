@@ -47,7 +47,7 @@ Această diagramă prezintă:
 \section{Diagrama Conceptuală Extinsă}
 \label{subsec:conceptual_diagram}
 
-Diagrama conceptuală extinsă a bazei de date OLTP este prezentată Mmai jos:
+Diagrama conceptuală extinsă a bazei de date OLTP este prezentată mai jos:
 \begin{figure}[H]
     \centering
     \includegraphics[width=1.0\textwidth]{../../schema/TickLy Conceptuală Extinsă.pdf}
@@ -76,11 +76,12 @@ Baza de date OLTP conține următoarele:
 
 \begin{enumerate}
     \item \textbf{TICKET} — tichetele de suport
-    \item \textbf{ATASAMENT} — atașamentele la tichete
-    \item \textbf{KB\_ARTICLE} — documentație
-    \item \textbf{FEEDBACK} — feedback-urile la tichete
-    \item \textbf{SOLUTIE} — soluțiile la tichete
-    \item \textbf{ADRESA} — adresele clientilor
+    \item \textbf{TICKET\_HISTORY} — istoricul evenimentelor pe tichete (audit trail)
+    \item \textbf{ATASAMENT} — atașamentele la tichete sau la articole KB
+    \item \textbf{KB\_ARTICLE} — articole din baza de cunoștințe (documentație)
+    \item \textbf{FEEDBACK} — feedback-urile clienților la tichete (rating, comentariu)
+    \item \textbf{SOLUTIE} — soluțiile înregistrate la tichete rezolvate
+    \item \textbf{ADRESA} — adresele clienților (facturare, livrare, sediu)
 \end{enumerate}
 
 \subsubsection{Entități de tip IS-A}
@@ -99,8 +100,8 @@ Sistemul conține următoarele relații many-to-many (M:N), implementate prin ta
     \item \textbf{Ticket $\leftrightarrow$ Topic} (prin \texttt{TICKET\_TOPIC}) - un ticket poate fi asociat cu mai multe topic-uri, iar un topic poate fi asociat cu mai multe tichete
     \item \textbf{Agent $\leftrightarrow$ Departament} (prin \texttt{AGENT\_DEPARTAMENT}) - un agent poate aparține mai multor departamente, iar un departament poate avea mai mulți agenți
     \item \textbf{Ticket $\leftrightarrow$ Tag} (prin \texttt{TICKET\_TAG}) - un ticket poate avea mai multe tag-uri, iar un tag poate fi asociat cu mai multe tichete
-    \item \textbf{Ticket $\leftrightarrow$ Client} (prin \texttt{COMMENT\_CLIENT}) - un ticket poate avea mai multe comentarii de la client, iar un client poate avea mai multe comentarii la tichete
-    \item \textbf{Ticket $\leftrightarrow$ Agent} (prin \texttt{COMMENT\_AGENT}) - un ticket poate avea mai multe comentarii de la agent, iar un agent poate avea mai multe comentarii la tichete
+    \item \textbf{Comment $\leftrightarrow$ Client} (prin \texttt{COMMENT\_CLIENT}) - un ticket poate avea mai multe comentarii de la client, iar un client poate avea mai multe comentarii la tichete
+    \item \textbf{Comment $\leftrightarrow$ Agent} (prin \texttt{COMMENT\_AGENT}) - un ticket poate avea mai multe comentarii de la agent, iar un agent poate avea mai multe comentarii la tichete
 \end{itemize}
 
 \chapter{Diagrama Stea/Fulg a Bazei de Date Depozit}
@@ -120,7 +121,13 @@ Modelul stea implementat pentru TickLy conține:
 \subsubsection{Tabel de Fapte}
 
 \begin{itemize}
-    \item \textbf{FACT\_TICKET} - tabelul central de fapte care stochează măsurile și metricile asociate tichetelor
+    \item \textbf{FACT\_TICKET} — tabelul central de fapte care stochează măsurile și metricile asociate tichetelor (chei către dimensiuni, status, prioritate, cost estimativ, timp rezolvare)
+\end{itemize}
+
+\subsubsection{Tabel de Legătură (Bridge)}
+
+\begin{itemize}
+    \item \textbf{BRIDGE\_TICKET\_TAG} — tabel de legătură many-to-many între \texttt{FACT\_TICKET} și \texttt{DIM\_TAG}; permite asocierea mai multor tag-uri la un ticket, cu \texttt{weight\_factor} (ex. 1 / număr tag-uri per ticket)
 \end{itemize}
 
 \subsubsection{Tabele Dimensiune}
@@ -173,57 +180,67 @@ Modelul stea implementat pentru TickLy conține:
 \hline
 \texttt{ticket\_id} & NUMBER & Copiat direct din \texttt{TICKET.ticket\_id} \\
 \hline
-\texttt{client\_key} & NUMBER & Lookup în \texttt{DIM\_CLIENT} pe baza \texttt{TICKET.client\_id} \\
+\texttt{client\_key} & NUMBER & Lookup în \texttt{DIM\_CLIENT} pe baza \texttt{TICKET.client\_id} (\texttt{is\_current = 'Y'}) \\
 \hline
-\texttt{agent\_key} & NUMBER & Lookup în \texttt{DIM\_AGENT} pe baza \texttt{TICKET\_AGENT.agent\_id} (agentul PRIMARY) \\
+\texttt{agent\_key} & NUMBER & Lookup în \texttt{DIM\_AGENT} pe baza \texttt{TICKET\_AGENT.agent\_id} (rol PRIMARY), fallback agent\_id = 1 \\
 \hline
-\texttt{departament\_key} & NUMBER & Lookup în \texttt{DIM\_DEPARTAMENT} pe baza \texttt{TICKET.departament\_id} \\
+\texttt{departament\_key} & NUMBER & Lookup în \texttt{DIM\_DEPARTAMENT} pe baza \texttt{TICKET.departament\_id} (\texttt{is\_current = 'Y'}) \\
 \hline
 \texttt{categorie\_key} & NUMBER & Lookup în \texttt{DIM\_CATEGORIE} pe baza \texttt{TICKET.categorie\_id} (poate fi NULL) \\
 \hline
-\ttwrap{date\_creare\_key} & NUMBER & Lookup în \texttt{DIM\_TIME} pe baza \texttt{TICKET.data\_creare} \\
+\texttt{topic\_key} & NUMBER & Lookup în \texttt{DIM\_TOPIC} pe baza \texttt{TICKET\_TOPIC} (MIN(topic\_id) per ticket) \\
 \hline
-\ttwrap{date\_rezolvare\_key} & NUMBER & Lookup în \texttt{DIM\_TIME} pe baza \texttt{TICKET.data\_rezolvare} (poate fi NULL) \\
+\ttwrap{date\_creare\_key} & NUMBER & \texttt{TO\_NUMBER(TO\_CHAR(TICKET.data\_creare, 'YYYYMMDD'))} — lookup în \texttt{DIM\_TIME} \\
 \hline
-\ttwrap{date\_inchidere\_key} & NUMBER & Lookup în \texttt{DIM\_TIME} pe baza \texttt{TICKET.data\_inchidere} (poate fi NULL) \\
+\ttwrap{date\_rezolvare\_key} & NUMBER & \texttt{TO\_NUMBER(TO\_CHAR(TICKET.data\_rezolvare, 'YYYYMMDD'))} (poate fi NULL) \\
 \hline
-\texttt{status\_id} & NUMBER & Copiat direct din \texttt{TICKET.status\_id} \\
+\ttwrap{date\_inchidere\_key} & NUMBER & \texttt{TO\_NUMBER(TO\_CHAR(TICKET.data\_inchidere, 'YYYYMMDD'))} (poate fi NULL) \\
 \hline
-\texttt{status\_nume} & VARCHAR2 & JOIN cu \texttt{STATUS.nume} \\
+\texttt{status\_id} & NUMBER & Copiat din \texttt{TICKET} JOIN \texttt{STATUS} \\
+\hline
+\texttt{status\_nume} & VARCHAR2(30) & JOIN cu \texttt{STATUS.nume} \\
 \hline
 \ttwrap{status\_este\_final} & CHAR(1) & JOIN cu \texttt{STATUS.este\_final} \\
 \hline
-\texttt{status\_ordine} & NUMBER & Calculat pe baza logicii de business (ordinea statusurilor) \\
+\texttt{prioritate\_id} & NUMBER & Copiat din \texttt{TICKET} JOIN \texttt{PRIORITATE} \\
 \hline
-\texttt{prioritate\_id} & NUMBER & Copiat direct din \texttt{TICKET.prioritate\_id} \\
+\texttt{prioritate\_nume} & VARCHAR2(20) & JOIN cu \texttt{PRIORITATE.nume} \\
 \hline
-\texttt{prioritate\_nivel} & NUMBER & JOIN cu \texttt{PRIORITATE.nivel} \\
+\texttt{cost\_estimativ} & NUMBER(10,2) & Din \texttt{DIM\_TOPIC.pret} (topic asociat ticketului) \\
 \hline
-\texttt{prioritate\_nume} & VARCHAR2 & JOIN cu \texttt{PRIORITATE.nume} \\
+\ttwrap{timp\_rezolvare\_ore} & NUMBER & Copiat din \texttt{TICKET.timp\_rezolvare\_ore} \\
 \hline
-\ttwrap{prioritate\_timp\_raspuns\_ore} & NUMBER & JOIN cu \texttt{PRIORITATE.timp\_raspuns\_ore} \\
+\texttt{load\_date} & DATE & SYSDATE la momentul încărcării (ETL) \\
 \hline
-\texttt{numar\_ticketuri} & NUMBER & Constantă = 1 (granularitatea este un ticket) \\
+\end{longtable}
+
+\section{Tabelul de Legătură: BRIDGE\_TICKET\_TAG}
+
+Tabelul de legătură (bridge) permite relația many-to-many între tichete și tag-uri în depozit: un ticket poate avea mai multe tag-uri, iar un tag poate fi asociat la mai multe tichete. Este populat de scriptul ETL \texttt{04\_load\_bridge.sql}, după ce \texttt{FACT\_TICKET} și \texttt{DIM\_TAG} sunt deja populate.
+
+\subsubsection{Câmpuri și Sursa de Date}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}p{2.8cm}|>{\raggedright\arraybackslash}p{8.7cm}|}
 \hline
-\ttwrap{timp\_rezolvare\_ore} & NUMBER & Copiat din \texttt{TICKET.timp\_rezolvare\_ore} sau calculat: \texttt{DATA\_REZOLVARE - DATA\_CREARE} \\
+\textbf{Câmp} & \textbf{Tip} & \textbf{Mod de Populare din OLTP} \\
 \hline
-\ttwrap{timp\_raspuns\_ore} & NUMBER & Calculat pe baza primului comentariu al agentului \\
+\endfirsthead
 \hline
-\ttwrap{timp\_rezolvare\_minute} & NUMBER & \texttt{timp\_rezolvare\_ore * 60} \\
+\textbf{Câmp} & \textbf{Tip} & \textbf{Mod de Populare din OLTP} \\
 \hline
-\texttt{rating\_feedback} & NUMBER & JOIN cu \texttt{FEEDBACK.rating} (1:1 cu TICKET) \\
+\endhead
 \hline
-\ttwrap{numar\_comentarii} & NUMBER & COUNT din \texttt{COMMENT\_CLIENT} și \texttt{COMMENT\_AGENT} pentru \texttt{ticket\_id} \\
+\endfoot
 \hline
-\ttwrap{numar\_comentarii\_client} & NUMBER & COUNT din \texttt{COMMENT\_CLIENT} pentru \texttt{ticket\_id} \\
+\endlastfoot
+
+\texttt{bridge\_id} & NUMBER & Generat automat (IDENTITY), cheie primară \\
 \hline
-\ttwrap{numar\_comentarii\_agent} & NUMBER & COUNT din \texttt{COMMENT\_AGENT} pentru \texttt{ticket\_id} \\
+\texttt{fact\_ticket\_id} & NUMBER & Lookup în \texttt{FACT\_TICKET} pe baza \texttt{TICKET\_TAG.ticket\_id} (JOIN \texttt{tt\_oltp.ticket\_id = f.ticket\_id}) \\
 \hline
-\texttt{numar\_atasamente} & NUMBER & COUNT din \texttt{ATASAMENT} pentru \texttt{ticket\_id} \\
+\texttt{tag\_key} & NUMBER & Lookup în \texttt{DIM\_TAG} pe baza \texttt{TICKET\_TAG.tag\_id} (JOIN \texttt{tt\_oltp.tag\_id = dt.tag\_id}) \\
 \hline
-\texttt{cost\_estimativ} & NUMBER(10,2) & Calculat pe baza \texttt{TOPIC.tarif} sau \texttt{TOPIC.pret} asociat \\
-\hline
-\texttt{load\_date} & DATE & SYSDATE la momentul încărcării \\
+\texttt{weight\_factor} & NUMBER & Calculat ca \texttt{1 / COUNT(*) OVER (PARTITION BY fact\_ticket\_id)} — distribuire uniformă a „greutății” pe tag-urile unui același ticket (suma weight\_factor pe ticket = 1) \\
 \hline
 \end{longtable}
 
@@ -355,7 +372,7 @@ Modelul stea implementat pentru TickLy conține:
 \hline
 \texttt{manager\_email} & VARCHAR2 & JOIN cu \texttt{AGENT} pe \texttt{DEPARTAMENT.manager\_id}: \texttt{AGENT.email} \\
 \hline
-\texttt{numar\_agenti} & NUMBER & COUNT din \texttt{AGENT\_DEPARTAMENT} pentru \texttt{departament\_id} unde \texttt{este\_principal = 'Y'} \\
+\texttt{numar\_agenti} & NUMBER & Opțional: COUNT din \texttt{AGENT\_DEPARTAMENT}; schema îl conține, ETL curent poate să nu îl populeze \\
 \hline
 \texttt{valid\_from} & DATE & SYSDATE pentru înregistrări noi, sau data modificării pentru SCD Type 2 \\
 \hline
@@ -477,7 +494,7 @@ Modelul stea implementat pentru TickLy conține:
 
 \section{Dimensiunea: DIM\_TIME}
 
-Dimensiunea temporală este populată prin proces ETL separat care generează toate datele dintr-un interval specificat (de exemplu, 2000-2050). Fiecare câmp este calculat pe baza datei complete:
+Dimensiunea temporală este populată prin scriptul ETL \texttt{01\_load\_dim\_time.sql}, care generează toate zilele dintr-un interval (ex. 2020--2030). Câmpurile sunt calculate pe baza datei (\texttt{curr\_date}):
 
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}p{2.8cm}|>{\raggedright\arraybackslash}p{8.7cm}|}
 \hline
@@ -493,35 +510,35 @@ Dimensiunea temporală este populată prin proces ETL separat care generează to
 \hline
 \endlastfoot
 
-\texttt{date\_key} & NUMBER & Format: YYYYMMDD (ex: 20250127) \\
+\texttt{date\_key} & NUMBER & \texttt{TO\_NUMBER(TO\_CHAR(curr\_date, 'YYYYMMDD'))} (ex: 20250127) \\
 \hline
-\texttt{data\_completa} & DATE & Data completă \\
+\texttt{data\_completa} & DATE & Data (TRUNC) \\
 \hline
-\texttt{an} & NUMBER(4) & \texttt{EXTRACT(YEAR FROM data\_completa)} \\
+\texttt{an} & NUMBER(4) & \texttt{TO\_NUMBER(TO\_CHAR(curr\_date, 'YYYY'))} \\
 \hline
-\texttt{trimestru} & NUMBER(1) & \texttt{TO\_NUMBER(TO\_CHAR(data\_completa, 'Q'))} \\
+\texttt{trimestru} & NUMBER(1) & \texttt{TO\_NUMBER(TO\_CHAR(curr\_date, 'Q'))} (1--4) \\
 \hline
-\texttt{luna} & NUMBER(2) & \texttt{EXTRACT(MONTH FROM data\_completa)} \\
+\texttt{luna} & NUMBER(2) & \texttt{TO\_NUMBER(TO\_CHAR(curr\_date, 'MM'))} \\
 \hline
-\texttt{luna\_nume} & VARCHAR2 & \texttt{TO\_CHAR(data\_completa, 'Month')} \\
+\texttt{luna\_nume} & VARCHAR2 & \texttt{TO\_CHAR(curr\_date, 'Month')} \\
 \hline
-\texttt{luna\_abrev} & VARCHAR2 & \texttt{TO\_CHAR(data\_completa, 'Mon')} \\
+\texttt{luna\_abrev} & VARCHAR2 & \texttt{TO\_CHAR(curr\_date, 'Mon')} \\
 \hline
-\texttt{zi} & NUMBER(2) & \texttt{EXTRACT(DAY FROM data\_completa)} \\
+\texttt{zi} & NUMBER(2) & \texttt{TO\_NUMBER(TO\_CHAR(curr\_date, 'DD'))} \\
 \hline
-\texttt{saptamana\_an} & NUMBER(2) & \texttt{TO\_NUMBER(TO\_CHAR(data\_completa, 'WW'))} \\
+\texttt{saptamana\_an} & NUMBER(2) & \texttt{TO\_NUMBER(TO\_CHAR(curr\_date, 'IW'))} (ISO week) \\
 \hline
-\ttwrap{zi\_saptamana} & NUMBER(1) & \texttt{TO\_NUMBER(TO\_CHAR(data\_completa, 'D'))} (1=Luni, 7=Duminică) \\
+\ttwrap{zi\_saptamana} & NUMBER(1) & \texttt{TO\_NUMBER(TO\_CHAR(curr\_date, 'D'))} (1--7, depinde de NLS) \\
 \hline
-\ttwrap{zi\_saptamana\_nume} & VARCHAR2 & \texttt{TO\_CHAR(data\_completa, 'Day')} \\
+\ttwrap{zi\_saptamana\_nume} & VARCHAR2 & \texttt{TO\_CHAR(curr\_date, 'Day')} \\
 \hline
-\ttwrap{este\_weekend} & CHAR(1) & 'Y' dacă \texttt{zi\_saptamana IN (6,7)}, altfel 'N' \\
+\ttwrap{este\_weekend} & CHAR(1) & 'Y' dacă Sâmbătă/Duminică (\texttt{DY IN ('SAT','SUN')}), altfel 'N' \\
 \hline
-\ttwrap{este\_sarbatoare} & CHAR(1) & Verificare în tabel de sărbători legale \\
+\ttwrap{este\_sarbatoare} & CHAR(1) & Opțional în schema; poate fi populat cu logică de sărbători legale \\
 \hline
-\ttwrap{nume\_sarbatoare} & VARCHAR2 & Numele sărbătorii (dacă există) \\
+\ttwrap{nume\_sarbatoare} & VARCHAR2 & Opțional; numele sărbătorii dacă există \\
 \hline
-\ttwrap{zi\_lucratoare} & CHAR(1) & 'Y' dacă este zi lucrătoare, 'N' dacă este weekend sau sărbătoare (consistență cu \texttt{este\_weekend} și \texttt{este\_sarbatoare}) \\
+\ttwrap{zi\_lucratoare} & CHAR(1) & Opțional; 'Y'/'N' în funcție de weekend/sărbătoare \\
 \hline
 \end{longtable}
 
@@ -530,17 +547,21 @@ Dimensiunea temporală este populată prin proces ETL separat care generează to
 
 \section{Constrângeri de Integritate Referențială}
 
-Toate tabelele dimensiune și tabelul de fapte folosesc constrângeri de cheie străină (FK) pentru a menține integritatea referențială:
+Toate tabelele dimensiune și tabelul de fapte folosesc constrângeri de cheie străină (FK). În implementare, FK-urile din \texttt{FACT\_TICKET} și \texttt{BRIDGE\_TICKET\_TAG} sunt definite cu \textbf{RELY DISABLE NOVALIDATE}.
 
 \begin{itemize}
-    \item \textbf{FK\_FACT\_CLIENT}: Asigură că fiecare ticket din \texttt{FACT\_TICKET} are un client valid în \texttt{DIM\_CLIENT}
-    \item \textbf{FK\_FACT\_AGENT}: Asigură că fiecare ticket are un agent valid în \texttt{DIM\_AGENT}
-    \item \textbf{FK\_FACT\_DEPARTAMENT}: Asigură că fiecare ticket aparține unui departament valid
-    \item \textbf{FK\_FACT\_CATEGORIE}: Asigură că categoria (dacă există) este validă
-    \item \textbf{FK\_FACT\_DATE\_CREARE}: Asigură că data de creare este validă în \texttt{DIM\_TIME}
-    \item \textbf{FK\_FACT\_DATE\_REZOLVARE}: Asigură că data de rezolvare este validă în \texttt{DIM\_TIME}
-    \item \textbf{FK\_FACT\_DATE\_INCHIDERE}: Asigură că data de închidere este validă în \texttt{DIM\_TIME}
+    \item \textbf{FK\_FACT\_CLIENT}: \texttt{FACT\_TICKET.client\_key} $\rightarrow$ \texttt{DIM\_CLIENT.client\_key}
+    \item \textbf{FK\_FACT\_AGENT}: \texttt{FACT\_TICKET.agent\_key} $\rightarrow$ \texttt{DIM\_AGENT.agent\_key}
+    \item \textbf{FK\_FACT\_DEPT}: \texttt{FACT\_TICKET.departament\_key} $\rightarrow$ \texttt{DIM\_DEPARTAMENT.departament\_key}
+    \item \textbf{FK\_FACT\_CAT}: \texttt{FACT\_TICKET.categorie\_key} $\rightarrow$ \texttt{DIM\_CATEGORIE.categorie\_key} (poate fi NULL)
+    \item \textbf{FK\_FACT\_TOPIC}: \texttt{FACT\_TICKET.topic\_key} $\rightarrow$ \texttt{DIM\_TOPIC.topic\_key}
+    \item \textbf{FK\_FACT\_DT\_CR}: \texttt{FACT\_TICKET.date\_creare\_key} $\rightarrow$ \texttt{DIM\_TIME.date\_key}
+    \item \textbf{FK\_BRIDGE\_FACT} / \textbf{FK\_BRIDGE\_DIM}: în \texttt{BRIDGE\_TICKET\_TAG}, legături către \texttt{FACT\_TICKET} și \texttt{DIM\_TAG}
 \end{itemize}
+
+\subsubsection{RELY DISABLE NOVALIDATE}
+
+FK-urile de la \texttt{FACT\_TICKET} și \texttt{BRIDGE\_TICKET\_TAG} către dimensiuni sunt create cu clauzele \texttt{RELY}, \texttt{DISABLE} și \texttt{NOVALIDATE}:
 
 \section{Constrângeri UNIQUE}
 
@@ -566,10 +587,7 @@ Toate tabelele dimensiune și tabelul de fapte folosesc constrângeri de cheie s
         \item \texttt{este\_sarbatoare IN ('Y', 'N')}
         \item \texttt{zi\_lucratoare IN ('Y', 'N')}
     \end{itemize}
-    \item \textbf{CHECK pentru FACT\_TICKET}:
-    \begin{itemize}
-        \item \texttt{rating\_feedback BETWEEN 1 AND 5}
-    \end{itemize}
+    \item \textbf{CHECK pentru FACT\_TICKET}: (dacă există câmp \texttt{rating\_feedback}, între 1 și 5; în implementarea curentă nu e prezent în fact.)
 \end{itemize}
 
 \section{Justificarea Constrângerilor}
@@ -584,84 +602,60 @@ Toate tabelele dimensiune și tabelul de fapte folosesc constrângeri de cheie s
     \item \textbf{UK\_FACT\_TICKET\_ID} este critică pentru a preveni duplicarea tichetelor în procesul ETL, asigurând că fiecare ticket din OLTP apare exact o dată în DW.
 \end{enumerate}
 
-\chapter{Indecșii Specifici Depozitelor de Date}
+\chapter{Indecșii Specifici OLTP și Depozit}
 \label{sec:indecsi}
 
-\section{Indecși B-Tree}
+\section{Indecși OLTP (schema TickLy)}
 
-\subsubsection{Pe Tabelul de Fapte (FACT\_TICKET)}
+Definiți în \texttt{03\_create\_oltp\_indexes.sql}:
 
-\begin{itemize}
-    \item \textbf{IDX\_FACT\_CLIENT}: Pe \texttt{client\_key} - pentru join-uri rapide cu dimensiunea clienților
-    \item \textbf{IDX\_FACT\_AGENT}: Pe \texttt{agent\_key} - pentru analize pe agenți
-    \item \textbf{IDX\_FACT\_DEPARTAMENT}: Pe \texttt{departament\_key} - pentru analize pe departamente
-    \item \textbf{IDX\_FACT\_CATEGORIE}: Pe \texttt{categorie\_key} - pentru filtrare pe categorii
-    \item \textbf{IDX\_FACT\_DATE\_CREARE}: Pe \texttt{date\_creare\_key} - pentru analize temporale (cel mai frecvent folosit)
-    \item \textbf{IDX\_FACT\_DATE\_REZOLVARE}: Pe \texttt{date\_rezolvare\_key} - pentru analize pe perioada de rezolvare
-    \item \textbf{IDX\_FACT\_STATUS}: Pe \texttt{status\_id} - pentru filtrare pe status
-    \item \textbf{IDX\_FACT\_PRIORITATE}: Pe \texttt{prioritate\_id} - pentru filtrare pe prioritate
-\end{itemize}
-
-\subsubsection{Pe Tabelele Dimensiune}
+\subsubsection{Pe tabelul TICKET și tabele copil}
 
 \begin{itemize}
-    \item \textbf{IDX\_DIM\_CLIENT\_ID}: Pe \texttt{client\_id} - pentru lookup rapid în procesul ETL
-    \item \textbf{IDX\_DIM\_CLIENT\_CURRENT}: Pe \texttt{is\_current} - pentru a găsi rapid versiunea curentă (SCD Type 2)
-    \item \textbf{IDX\_DIM\_AGENT\_ID}: Pe \texttt{agent\_id} - pentru lookup în ETL
-    \item \textbf{IDX\_DIM\_AGENT\_CURRENT}: Pe \texttt{is\_current} - pentru versiunea curentă
-    \item \textbf{IDX\_DIM\_DEPARTAMENT\_ID}: Pe \texttt{departament\_id} - pentru lookup în ETL
-    \item \textbf{IDX\_DIM\_DEPARTAMENT\_CURRENT}: Pe \texttt{is\_current} - pentru versiunea curentă
-    \item \textbf{IDX\_DIM\_TIME\_AN}: Pe \texttt{an} - pentru analize anuale
-    \item \textbf{IDX\_DIM\_TIME\_LUNA}: Pe \texttt{(an, luna)} - pentru analize lunare
-    \item \textbf{IDX\_DIM\_TIME\_TRIMESTRU}: Pe \texttt{(an, trimestru)} - pentru analize trimestriale
+    \item \textbf{idx\_ticket\_client}, \textbf{idx\_ticket\_dept}, \textbf{idx\_ticket\_status}, \textbf{idx\_ticket\_prioritate}, \textbf{idx\_ticket\_categ}: B-tree pe coloanele FK, pentru join-uri și filtre
+    \item \textbf{idx\_ticket\_data\_creare}: B-tree pe \texttt{data\_creare} — pentru filtre și sortări temporale
+    \item \textbf{idx\_comm\_client\_tid}, \textbf{idx\_comm\_agent\_tid}: pe \texttt{comment\_client(ticket\_id)}, \texttt{comment\_agent(ticket\_id)} — listare comentarii per ticket
+    \item \textbf{idx\_hist\_ticket\_tid}: pe \texttt{ticket\_history(ticket\_id)} — istoric evenimente per ticket
+    \item \textbf{idx\_atasament\_ticket\_id}: pe \texttt{atasament(ticket\_id)}
+    \item \textbf{idx\_ticket\_agent\_rev}: pe \texttt{ticket\_agent(agent\_id)} — tichete per agent
+    \item \textbf{idx\_ticket\_tag\_rev}: pe \texttt{ticket\_tag(tag\_id)} — tichete per tag
 \end{itemize}
 
-\section{Indecși Bitmap}
-
-% Indecșii bitmap sunt optimizați pentru coloane cu cardinalitate redusă (puține valori distincte).
-
-\subsubsection{Pe Tabelul de Fapte}
+\subsubsection{Indecși function-based (căutări case-insensitive)}
 
 \begin{itemize}
-    \item \textbf{BMP\_FACT\_STATUS\_NUME}: Pe \texttt{status\_nume} - pentru filtrare rapidă pe status (ex: "Deschis", "În Progres", "Rezolvat")
-    \item \textbf{BMP\_FACT\_STATUS\_FINAL}: Pe \texttt{status\_este\_final} - pentru a identifica rapid tichetele finalizate ('Y'/'N')
-    \item \textbf{BMP\_FACT\_PRIORITATE\_NIVEL}: Pe \texttt{prioritate\_nivel} - pentru filtrare pe nivel de prioritate (1-5)
-    \item \textbf{BMP\_FACT\_PRIORITATE\_NUME}: Pe \texttt{prioritate\_nume} - pentru filtrare pe nume prioritate
-    \item \textbf{BMP\_FACT\_RATING}: Pe \texttt{rating\_feedback} - pentru analize pe rating (1-5)
+    \item \textbf{idx\_client\_nume\_upper}, \textbf{idx\_client\_prenume\_upper}: pe \texttt{UPPER(nume)}, \texttt{UPPER(prenume)} în \texttt{client\_fizica}
+    \item \textbf{idx\_juridic\_denumire\_upper}: pe \texttt{UPPER(denumire)} în \texttt{client\_juridica}
 \end{itemize}
 
-\subsubsection{Pe Tabelele Dimensiune}
+\section{Indecși OLAP (schema TickLy\_DW)}
+
+Definiți în \texttt{07\_create\_olap\_indexes.sql}:
+
+\subsubsection{Pe tabelul de fapte și bridge}
 
 \begin{itemize}
-    \item \textbf{BMP\_DIM\_CLIENT\_TYPE}: Pe \texttt{client\_type} - pentru filtrare pe tip client ('F'/'J')
-    \item \textbf{BMP\_DIM\_CLIENT\_ACTIVE}: Pe \texttt{is\_active} - pentru a identifica clienții activi
-    \item \textbf{BMP\_DIM\_CLIENT\_CURRENT}: Pe \texttt{is\_current} - pentru versiunea curentă (SCD Type 2)
-    \item \textbf{BMP\_DIM\_AGENT\_ACTIVE}: Pe \texttt{is\_active} - pentru agenții activi
-    \item \textbf{BMP\_DIM\_AGENT\_CURRENT}: Pe \texttt{is\_current} - pentru versiunea curentă
-    \item \textbf{BMP\_DIM\_DEPARTAMENT\_CURRENT}: Pe \texttt{is\_current} - pentru versiunea curentă
-    \item \textbf{BMP\_DIM\_TOPIC\_TYPE}: Pe \texttt{topic\_type} - pentru filtrare pe tip topic ('S'/'P')
-    \item \textbf{BMP\_DIM\_TIME\_WEEKEND}: Pe \texttt{este\_weekend} - pentru analize pe weekend
-    \item \textbf{BMP\_DIM\_TIME\_SARBATOARE}: Pe \texttt{este\_sarbatoare} - pentru analize pe sărbători
-    \item \textbf{BMP\_DIM\_TIME\_TRIMESTRU}: Pe \texttt{trimestru} - pentru analize trimestriale
-    \item \textbf{BMP\_DIM\_TIME\_LUNA}: Pe \texttt{luna} - pentru analize lunare
-    \item \textbf{BMP\_DIM\_TIME\_ZI\_SAPTAMANA}: Pe \texttt{zi\_saptamana} - pentru analize pe zile ale săptămânii
+    \item \textbf{bidx\_fact\_status}: bitmap pe \texttt{fact\_ticket(status\_id)} — cardinalitate mică
+    \item \textbf{bidx\_fact\_prioritate}: bitmap pe \texttt{fact\_ticket(prioritate\_id)}
+    \item \textbf{bidx\_bridge\_tag}: bitmap pe \texttt{bridge\_ticket\_tag(tag\_key)}
+    \item \textbf{idx\_bridge\_ticket\_id}: B-tree pe \texttt{bridge\_ticket\_tag(fact\_ticket\_id)} — cardinalitate mare
 \end{itemize}
 
-\section{Cerere în Limbaj Natural care Utilizează Indecșii Specificați}
+\subsubsection{Pe dimensiuni}
 
-\textbf{Cerere}: "Să se afișeze numărul total de tichete rezolvate cu rating 5 stele, create în weekend-urile din trimestrul 1 al anului 2025, grupate pe departamente și agenți activi."
-
-Această cerere va utiliza următorii indecși:
 \begin{itemize}
-    \item \textbf{BMP\_FACT\_RATING}: Pentru filtrarea rapidă a tichetelor cu \texttt{rating\_feedback = 5}
-    \item \textbf{BMP\_FACT\_STATUS\_FINAL}: Pentru filtrarea tichetelor finalizate (\texttt{status\_este\_final = 'Y'})
-    \item \textbf{BMP\_DIM\_TIME\_WEEKEND}: Pentru identificarea rapidă a zilelor de weekend (\texttt{este\_weekend = 'Y'})
-    \item \textbf{BMP\_DIM\_TIME\_TRIMESTRU}: Pentru filtrarea pe trimestrul 1
-    \item \textbf{IDX\_DIM\_TIME\_AN}: Pentru filtrarea pe anul 2025
-    \item \textbf{IDX\_FACT\_DATE\_CREARE}: Pentru join-ul eficient cu dimensiunea temporală
-    \item \textbf{IDX\_FACT\_DEPARTAMENT}: Pentru join-ul cu dimensiunea departamentelor
-    \item \textbf{IDX\_FACT\_AGENT}: Pentru join-ul cu dimensiunea agenților
-    \item \textbf{BMP\_DIM\_AGENT\_ACTIVE}: Pentru filtrarea agenților activi
-    \item \textbf{BMP\_DIM\_AGENT\_CURRENT}: Pentru a obține versiunea curentă a agenților
+    \item \textbf{idx\_dim\_client\_cnp}: B-tree pe \texttt{dim\_client(cnp)} — lookup și căutări pe CNP
 \end{itemize}
+
+\section{Cereri SQL și Plan de Execuție (Utilizarea Indecșilor)}
+
+Pentru demonstrarea utilizării indecșilor, în \texttt{scripts/tests/06\_indexes.sql} sunt definite cereri SQL însoțite de \texttt{EXPLAIN PLAN} și \texttt{DBMS\_XPLAN.DISPLAY}:
+
+\begin{enumerate}
+    \item \textbf{OLTP — index function-based pe \texttt{client\_fizica}}: cerere care filtrează pe \texttt{UPPER(nume) = 'RADU'}; planul trebuie să indice utilizarea \texttt{idx\_client\_nume\_upper}.
+    \item \textbf{OLTP — index pe \texttt{ticket.data\_creare}}: cerere care filtrează pe interval de date (\texttt{data\_creare} între feb.–dec. 2024); planul trebuie să indice \texttt{idx\_ticket\_data\_creare}.
+    \item \textbf{Depozit — indecși bitmap pe \texttt{fact\_ticket}}: cerere cu hint \texttt{INDEX\_COMBINE} care filtrează pe \texttt{status\_id} și \texttt{prioritate\_id}; planul trebuie să indice utilizarea \texttt{bidx\_fact\_status} și \texttt{bidx\_fact\_prioritate}.
+\end{enumerate}
+
+Rezultatele planurilor de execuție sunt în \texttt{scripts/tests/assets/} și incluse în documentație pentru a dovedi că optimizorul folosește indecșii definiți.
 

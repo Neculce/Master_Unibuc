@@ -647,15 +647,64 @@ Definiți în \texttt{07\_create\_olap\_indexes.sql}:
     \item \textbf{idx\_dim\_client\_cnp}: B-tree pe \texttt{dim\_client(cnp)} — lookup și căutări pe CNP
 \end{itemize}
 
-\section{Cereri SQL și Plan de Execuție (Utilizarea Indecșilor)}
-
-Pentru demonstrarea utilizării indecșilor, în \texttt{scripts/tests/06\_indexes.sql} sunt definite cereri SQL însoțite de \texttt{EXPLAIN PLAN} și \texttt{DBMS\_XPLAN.DISPLAY}:
+\section{Cereri SQL și Plan de Execuție}
 
 \begin{enumerate}
-    \item \textbf{OLTP — index function-based pe \texttt{client\_fizica}}: cerere care filtrează pe \texttt{UPPER(nume) = 'RADU'}; planul trebuie să indice utilizarea \texttt{idx\_client\_nume\_upper}.
-    \item \textbf{OLTP — index pe \texttt{ticket.data\_creare}}: cerere care filtrează pe interval de date (\texttt{data\_creare} între feb.–dec. 2024); planul trebuie să indice \texttt{idx\_ticket\_data\_creare}.
-    \item \textbf{Depozit — indecși bitmap pe \texttt{fact\_ticket}}: cerere cu hint \texttt{INDEX\_COMBINE} care filtrează pe \texttt{status\_id} și \texttt{prioritate\_id}; planul trebuie să indice utilizarea \texttt{bidx\_fact\_status} și \texttt{bidx\_fact\_prioritate}.
+    \item \textbf{OLTP — index function-based pe \texttt{client\_fizica}}
+    \begin{itemize}
+        \item \textbf{Cerere în limbaj natural:} „Să se afișeze datele (identificator, CNP, nume, prenume) persoanelor fizice care au numele egal cu «RADU»”
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{./assets/indexes/test_1.png}
+        \caption{Rulare query 1}
+        \label{fig:rulare_query_1}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/oltp_client_index_explain.png}
+        \caption{Plan de execuție query 1}
+        \label{fig:plan_executie_query_1}
+    \end{figure}
+
+    \item \textbf{OLTP — index pe \texttt{ticket.data\_creare}}
+    \begin{itemize}
+        \item \textbf{Cerere în limbaj natural:} „Să se afișeze identificatorul, titlul, statusul și data creării pentru toate tichetele create în anul 2024, între luna februarie și luna decembrie.”
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{./assets/indexes/test_2.png}
+        \caption{Rulare query 2}
+        \label{fig:rulare_query_2}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/oltp_date_index_explain.png}
+        \caption{Plan de execuție query 2}
+        \label{fig:plan_executie_query_2}
+    \end{figure}
+
+    \item \textbf{Depozit — indecși bitmap pe \texttt{fact\_ticket}}
+    \begin{itemize}
+        \item \textbf{Cerere în limbaj natural:} „Să se afișeze identificatorul din OLAP, cheia clientului și timpul de rezolvare (în ore) pentru tichetele care au un anumit status și/sau o anumită prioritate.”
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{./assets/indexes/test_3.png}
+        \caption{Rulare query 3}
+        \label{fig:rulare_query_3}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/olap_status_prio_explain.png}
+        \caption{Plan de execuție query 3}
+        \label{fig:plan_executie_query_3}
+    \end{figure}
+
 \end{enumerate}
-
-Rezultatele planurilor de execuție sunt în \texttt{scripts/tests/assets/} și incluse în documentație pentru a dovedi că optimizorul folosește indecșii definiți.
-

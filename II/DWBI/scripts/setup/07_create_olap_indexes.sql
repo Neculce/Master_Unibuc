@@ -3,11 +3,11 @@ WHENEVER SQLERROR EXIT FAILURE;
 
 /* index bitmap pe status_id in tabela de fapte */
 /* cardinalitate mica */
-CREATE BITMAP INDEX TickLy_DW.bidx_fact_status ON TickLy_DW.fact_ticket(status_id);
+CREATE BITMAP INDEX TickLy_DW.bidx_fact_status ON TickLy_DW.fact_ticket(status_id) LOCAL;
 
 /* index bitmap pe prioritate_id */
 /* cardinalitate mica */
-CREATE BITMAP INDEX TickLy_DW.bidx_fact_prioritate ON TickLy_DW.fact_ticket(prioritate_id);
+CREATE BITMAP INDEX TickLy_DW.bidx_fact_prioritate ON TickLy_DW.fact_ticket(prioritate_id) LOCAL;
 
 /* index bitmap pe tag_key in tabela de legatura (bridge) */
 /* cardinalitate mica */

@@ -602,12 +602,88 @@ FK-urile de la \texttt{FACT\_TICKET} și \texttt{BRIDGE\_TICKET\_TAG} către dim
     \item \textbf{UK\_FACT\_TICKET\_ID} este critică pentru a preveni duplicarea tichetelor în procesul ETL, asigurând că fiecare ticket din OLTP apare exact o dată în DW.
 \end{enumerate}
 
+\chapter{Obiecte de Tip Dimensiune}
+\label{sec:obiecte_dimensiune}
+
+\section{Dimensiunea temporală: dim\_time\_dim}
+
+Obiectul \texttt{dim\_time\_dim} se bazează pe tabelul \texttt{DIM\_TIME} și definește:
+
+\begin{itemize}
+    \item \textbf{Nivele:} \texttt{zi\_lvl} (date\_key), \texttt{saptamana\_lvl} (an, saptamana\_an), \texttt{luna\_lvl} (an, luna), \texttt{trimestru\_lvl} (an, trimestru), \texttt{an\_lvl} (an).
+    \item \textbf{Ierarhia comercială} (\texttt{commercial\_hier}): zi $\rightarrow$ săptămână $\rightarrow$ an (pentru analize pe săptămâni din an).
+    \item \textbf{Ierarhia calendar} (\texttt{calendar\_hier}): zi $\rightarrow$ lună $\rightarrow$ trimestru $\rightarrow$ an (pentru drill-down lunar/trimestrial).
+    \item \textbf{Atribute:} \texttt{zi\_lvl} determină \texttt{data\_completa}, \texttt{zi\_saptamana\_nume}, \texttt{este\_weekend}; \texttt{luna\_lvl} determină \texttt{luna\_nume}, \texttt{luna\_abrev}.
+\end{itemize}
+
+\section{Dimensiunea topic: dim\_topic\_dim}
+
+Obiectul \texttt{dim\_topic\_dim} se bazează pe tabelul \texttt{DIM\_TOPIC} și definește:
+
+\begin{itemize}
+    \item \textbf{Nivele:} \texttt{topic\_lvl} (topic\_key), \texttt{type\_lvl} (topic\_type).
+    \item \textbf{Ierarhia} (\texttt{topic\_hier}): topic $\rightarrow$ tip (serviciu/produs).
+    \item \textbf{Atribute:} \texttt{topic\_lvl} determină \texttt{nume}, \texttt{descriere}, \texttt{tip\_serviciu}, \texttt{versiune}.
+\end{itemize}
+
+\section{Validarea dimensiunilor}
+
+În imaginile urmatoare se poate observa verificarea dimensiunilor si validarea lor.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/validare_dimensiune.png}
+    \caption{Validarea dimensiunilor}
+    \label{fig:validate_dimensions}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/verificare_validare_dimensiune.png}
+    \caption{Verificarea validării dimensiunilor}
+    \label{fig:verificare_validare_dimensiune}
+\end{figure}
+
+\chapter{Partiționarea Tabelelor}
+\label{sec:partitii}
+
+\section{Tabelul FACT\_TICKET — partiționare compusă}
+
+\subsection{Tipuri de partiționare}
+
+\begin{itemize}
+    \item \textbf{Partiționare RANGE} pe \texttt{date\_creare\_key}: partiții pe ani (2023, 2024, \ldots, 2030) plus \texttt{fact\_tickets\_viitor} (\texttt{MAXVALUE}).
+    \item \textbf{Subpartiționare HASH} pe \texttt{topic\_key} în 4 subpartiții per partiție.
+\end{itemize}
+
+\subsection{Partiții definite}
+
+Partițiile RANGE sunt: \texttt{fact\_tickets\_2023} (VALUES LESS THAN 20240000), \texttt{fact\_tickets\_2024} (20250000), \ldots, \texttt{fact\_tickets\_2030} (20310000), \texttt{fact\_tickets\_viitor} (MAXVALUE).
+
+\section{Cereri în limbaj natural}
+
+\textbf{Cerere în limbaj natural nr 1:} „Să se calculeze numărul de tichete și timpul mediu de rezolvare (în ore) pentru tichetele create în anul 2024, grupate pe departament și pe status.”
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/partitie_range.png}
+    \caption{Partiționare RANGE}
+    \label{fig:partitie_range}
+\end{figure}
+
+\textbf{Cerere în limbaj natural nr 2:} „Analiza performanței pentru un anumit Topic critic (ex: ID 105) în anul 2024.”
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/partitie_range_hash.png}
+    \caption{Partiționare RANGE și HASH}
+    \label{fig:partitie_range_hash}
+\end{figure}
+
 \chapter{Indecșii Specifici OLTP și Depozit}
 \label{sec:indecsi}
 
 \section{Indecși OLTP (schema TickLy)}
-
-Definiți în \texttt{03\_create\_oltp\_indexes.sql}:
 
 \subsubsection{Pe tabelul TICKET și tabele copil}
 
@@ -630,8 +706,6 @@ Definiți în \texttt{03\_create\_oltp\_indexes.sql}:
 
 \section{Indecși OLAP (schema TickLy\_DW)}
 
-Definiți în \texttt{07\_create\_olap\_indexes.sql}:
-
 \subsubsection{Pe tabelul de fapte și bridge}
 
 \begin{itemize}
@@ -647,15 +721,64 @@ Definiți în \texttt{07\_create\_olap\_indexes.sql}:
     \item \textbf{idx\_dim\_client\_cnp}: B-tree pe \texttt{dim\_client(cnp)} — lookup și căutări pe CNP
 \end{itemize}
 
-\section{Cereri SQL și Plan de Execuție (Utilizarea Indecșilor)}
-
-Pentru demonstrarea utilizării indecșilor, în \texttt{scripts/tests/06\_indexes.sql} sunt definite cereri SQL însoțite de \texttt{EXPLAIN PLAN} și \texttt{DBMS\_XPLAN.DISPLAY}:
+\section{Cereri SQL și Plan de Execuție}
 
 \begin{enumerate}
-    \item \textbf{OLTP — index function-based pe \texttt{client\_fizica}}: cerere care filtrează pe \texttt{UPPER(nume) = 'RADU'}; planul trebuie să indice utilizarea \texttt{idx\_client\_nume\_upper}.
-    \item \textbf{OLTP — index pe \texttt{ticket.data\_creare}}: cerere care filtrează pe interval de date (\texttt{data\_creare} între feb.–dec. 2024); planul trebuie să indice \texttt{idx\_ticket\_data\_creare}.
-    \item \textbf{Depozit — indecși bitmap pe \texttt{fact\_ticket}}: cerere cu hint \texttt{INDEX\_COMBINE} care filtrează pe \texttt{status\_id} și \texttt{prioritate\_id}; planul trebuie să indice utilizarea \texttt{bidx\_fact\_status} și \texttt{bidx\_fact\_prioritate}.
+    \item \textbf{OLTP — index function-based pe \texttt{client\_fizica}}
+    \begin{itemize}
+        \item \textbf{Cerere în limbaj natural:} „Să se afișeze datele (identificator, CNP, nume, prenume) persoanelor fizice care au numele egal cu «RADU»”
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{./assets/indexes/test_1.png}
+        \caption{Rulare query 1}
+        \label{fig:rulare_query_1}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/oltp_client_index_explain.png}
+        \caption{Plan de execuție query 1}
+        \label{fig:plan_executie_query_1}
+    \end{figure}
+
+    \item \textbf{OLTP — index pe \texttt{ticket.data\_creare}}
+    \begin{itemize}
+        \item \textbf{Cerere în limbaj natural:} „Să se afișeze identificatorul, titlul, statusul și data creării pentru toate tichetele create în anul 2024, între luna februarie și luna decembrie.”
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{./assets/indexes/test_2.png}
+        \caption{Rulare query 2}
+        \label{fig:rulare_query_2}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/oltp_date_index_explain.png}
+        \caption{Plan de execuție query 2}
+        \label{fig:plan_executie_query_2}
+    \end{figure}
+
+    \item \textbf{Depozit — indecși bitmap pe \texttt{fact\_ticket}}
+    \begin{itemize}
+        \item \textbf{Cerere în limbaj natural:} „Să se afișeze identificatorul din OLAP, cheia clientului și timpul de rezolvare (în ore) pentru tichetele care au un anumit status și/sau o anumită prioritate.”
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{./assets/indexes/test_3.png}
+        \caption{Rulare query 3}
+        \label{fig:rulare_query_3}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/olap_status_prio_explain.png}
+        \caption{Plan de execuție query 3}
+        \label{fig:plan_executie_query_3}
+    \end{figure}
+
 \end{enumerate}
-
-Rezultatele planurilor de execuție sunt în \texttt{scripts/tests/assets/} și incluse în documentație pentru a dovedi că optimizorul folosește indecșii definiți.
-

@@ -145,8 +145,7 @@ CREATE TABLE TickLy_DW.fact_ticket (
    CONSTRAINT fk_fact_topic FOREIGN KEY (topic_key) REFERENCES TickLy_DW.dim_topic (topic_key) RELY DISABLE NOVALIDATE,
    CONSTRAINT fk_fact_dt_cr FOREIGN KEY (date_creare_key) REFERENCES TickLy_DW.dim_time (date_key) RELY DISABLE NOVALIDATE,
    CONSTRAINT uk_fact_ticket_id UNIQUE (ticket_id)
-);
-
+)
 PARTITION BY RANGE (date_creare_key)
 SUBPARTITION BY HASH (topic_key) SUBPARTITIONS 4
 (

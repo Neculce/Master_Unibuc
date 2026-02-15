@@ -47,27 +47,21 @@ function statusClass(s: string) {
   return "bg-gray-100 text-gray-800";
 }
 
-function accentClasses(accent: "primary" | "green" | "blue" | "gray") {
-  return accent === "primary"
-    ? "bg-primary/10 text-primary border-primary/20"
-    : accent === "green"
-      ? "bg-green-50 text-green-700 border-green-200/60"
-      : accent === "blue"
-        ? "bg-blue-50 text-blue-700 border-blue-200/60"
-        : "bg-gray-50 text-gray-700 border-gray-200/80";
-}
-
 function statusIcon(esteFinal: boolean, index: number): string {
   if (esteFinal) return index % 2 === 0 ? "check_circle" : "archive";
   const icons = ["inbox", "pending_actions", "schedule"];
   return icons[index % icons.length];
 }
 
+const TICKETS_PER_PAGE = 20;
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,21 +71,11 @@ export default function DashboardPage() {
   const clientOpenCount = stats?.statuses.filter((s) => !s.este_final).reduce((a, s) => a + s.count, 0) ?? 0;
   const clientClosedCount = stats?.statuses.filter((s) => s.este_final).reduce((a, s) => a + s.count, 0) ?? 0;
 
-  const filteredTickets = (() => {
-    if (statusFilters.size === 0) return tickets;
-    if (!isAgent) {
-      const wantOpen = statusFilters.has("Deschis");
-      const wantClosed = statusFilters.has("Închis");
-      if (!wantOpen && !wantClosed) return tickets;
-      return tickets.filter((t) => {
-        const closed = statusNumeToFinal.get(t.status_nume) === true;
-        return (wantOpen && !closed) || (wantClosed && closed);
-      });
-    }
-    return tickets.filter((t) => statusFilters.has(t.status_nume));
-  })();
+  const totalPages = Math.max(1, Math.ceil(totalCount / TICKETS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
 
   const toggleStatusFilter = (nume: string) => {
+    setCurrentPage(1);
     setStatusFilters((prev) => {
       const next = new Set(prev);
       if (next.has(nume)) next.delete(nume);
@@ -100,27 +84,58 @@ export default function DashboardPage() {
     });
   };
 
-  const clearStatusFilters = () => setStatusFilters(new Set());
+  const clearStatusFilters = () => {
+    setCurrentPage(1);
+    setStatusFilters(new Set());
+  };
 
   const isTicketClosed = (t: Ticket) => statusNumeToFinal.get(t.status_nume) === true;
 
+  // Build API query
+  const ticketsQuery = (() => {
+    const params = new URLSearchParams();
+    params.set("stats", "true");
+    params.set("page", String(safePage));
+    params.set("limit", String(TICKETS_PER_PAGE));
+    if (isAgent) {
+      if (statusFilters.size > 0) params.set("status", Array.from(statusFilters).join(","));
+    } else {
+      const wantOpen = statusFilters.has("Deschis");
+      const wantClosed = statusFilters.has("Închis");
+      if (wantOpen && !wantClosed) params.set("statusFilter", "open");
+      else if (wantClosed && !wantOpen) params.set("statusFilter", "closed");
+    }
+    return params.toString();
+  })();
+
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
     Promise.all([
       fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)),
-      fetch("/api/tickets?stats=true").then((r) => {
+      fetch("/api/tickets?" + ticketsQuery).then((r) => {
         if (!r.ok) throw new Error("Failed to load");
         return r.json();
       }),
     ])
       .then(([me, data]) => {
+        if (cancelled) return;
         setUser(me || null);
         const list = Array.isArray(data) ? data : data?.tickets ?? [];
         setTickets(list);
+        setTotalCount(typeof data?.total === "number" ? data.total : list.length);
         setStats(data?.stats ?? null);
       })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch((e) => {
+        if (!cancelled) setError(e.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ticketsQuery]);
 
   if (loading) {
     return (
@@ -144,7 +159,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Header: role-aware */}
+      {/* Header: role-aware + BUTON TICKET NOU */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -164,9 +179,17 @@ export default function DashboardPage() {
             {user?.name ? ` · ${user.name}` : ""}
           </p>
         </div>
+
+        <Link
+          href="/tickets/new"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-all active:scale-[0.98]"
+        >
+          <span className="material-symbols-outlined text-[20px]">add</span>
+          Ticket Nou
+        </Link>
       </div>
 
-      {/* Filtre pe status – pentru client doar Deschis/Închis, pentru agent toate statusurile */}
+      {/* Filtre pe status */}
       {stats != null && (
         <div className="rounded-2xl border border-gray-200/90 bg-white shadow-card-lg overflow-hidden">
           <div className="border-b border-gray-100 bg-gray-50/60 px-6 py-3">
@@ -279,7 +302,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredTickets.length === 0 ? (
+              {tickets.length === 0 ? (
                 <tr>
                   <td colSpan={isAgent ? 8 : 7} className="px-6 py-20 text-center">
                     <span className="material-symbols-outlined text-5xl text-gray-300 mb-3 block">
@@ -298,7 +321,7 @@ export default function DashboardPage() {
                   </td>
                 </tr>
               ) : (
-                filteredTickets.map((t) => (
+                tickets.map((t) => (
                   <tr key={t.ticket_id} className="hover:bg-gray-50/80 transition-colors duration-200 group">
                     <td className="px-6 py-4 text-sm font-medium text-gray-500">
                       <Link
@@ -363,6 +386,44 @@ export default function DashboardPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalCount > 0 && (
+          <div className="border-t border-gray-100 bg-gray-50/40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+            <p className="text-sm text-gray-600">
+              Afișare{" "}
+              <span className="font-medium text-[#0e141b]">
+                {(safePage - 1) * TICKETS_PER_PAGE + 1}–
+                {Math.min(safePage * TICKETS_PER_PAGE, totalCount)}
+              </span>{" "}
+              din <span className="font-medium text-[#0e141b]">{totalCount}</span> tickete
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-lg">chevron_left</span>
+                Anterior
+              </button>
+              <span className="px-3 py-2 text-sm text-gray-600">
+                Pagina <span className="font-semibold text-[#0e141b]">{safePage}</span> din{" "}
+                <span className="font-semibold text-[#0e141b]">{totalPages}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50"
+              >
+                Următoare
+                <span className="material-symbols-outlined text-lg">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

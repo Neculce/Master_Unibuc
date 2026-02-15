@@ -507,7 +507,7 @@ function TicketView({
                       onChange={(e) => setCommentInternal(e.target.checked)}
                       className="rounded border-gray-300 text-primary focus:ring-primary/40"
                     />
-                    <span className="text-sm text-gray-600">Comentariu intern (nu este vizibil pentru client)</span>
+                    <span className="text-sm text-gray-600">Comentariu intern</span>
                   </label>
                 )}
                 <button
@@ -521,44 +521,6 @@ function TicketView({
             </div>
           </div>
 
-          {/* Card Atașamente */}
-          <div className="bg-white border border-gray-200/90 rounded-2xl shadow-card-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-primary/5">
-              <h2 className="text-sm font-semibold text-[#0e141b] flex items-center gap-2">
-                <span className="material-symbols-outlined text-lg text-primary">attach_file</span>
-                Atașamente
-                {attachments.length > 0 && (
-                  <span className="text-xs font-normal text-gray-500">({attachments.length})</span>
-                )}
-              </h2>
-            </div>
-            <div className="px-6 py-5">
-              {attachments.length === 0 ? (
-                <p className="text-sm text-gray-500 flex items-center gap-2.5 py-2">
-                  <span className="material-symbols-outlined text-lg text-gray-400">attach_file</span>
-                  Niciun atașament.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {attachments.map((a) => (
-                    <li key={a.atasament_id} className="flex items-center gap-3 py-3 px-4 rounded-xl bg-gray-50/80 border border-gray-100 hover:bg-gray-50 transition-colors duration-200">
-                      <span className="material-symbols-outlined text-gray-400">attach_file</span>
-                      <div className="min-w-0 flex-1">
-                        <span className="text-sm font-medium text-[#0e141b] truncate block">{a.file_name}</span>
-                        <span className="text-xs text-gray-500">
-                          {formatBytes(a.file_size)}
-                          {a.file_type ? " · " + a.file_type : ""}
-                          {" · "}
-                          <span className="tabular-nums">{formatDate(a.upload_date)}</span>
-                          {a.uploader_type === "C" ? " (Client)" : " (Agent)"}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Sidebar: Status CTAs (agent) + Informații ticket (cu edit inline pentru agent) */}

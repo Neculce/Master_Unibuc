@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
+import { getSession } from "@/lib/auth"; // <-- Importăm sesiunea
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,11 +9,14 @@ export const metadata: Metadata = {
   description: "TickLy Support Dashboard",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // 1. Obținem sesiunea pe server (Server Component)
+  const session = await getSession();
+
   return (
     <html lang="en">
       <head>
@@ -29,7 +33,8 @@ export default function RootLayout({
             </div>
             <h2 className="text-xl font-bold tracking-tight text-[#0e141b]">TickLy</h2>
           </Link>
-          <Nav />
+          
+          <Nav user={session} />
         </header>
         <main className="flex-1 flex justify-center py-10 px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-[1100px]">{children}</div>

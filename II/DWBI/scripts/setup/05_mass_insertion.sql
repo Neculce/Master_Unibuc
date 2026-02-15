@@ -2,9 +2,11 @@ ALTER SESSION SET CONTAINER = orclpdb1;
 SET SERVEROUTPUT ON;
 
 DECLARE
+    -- Configurari
     v_rows_to_generate CONSTANT NUMBER := 1000000;
-    v_batch_size       CONSTANT NUMBER := 5000;
+    v_batch_size       CONSTANT NUMBER := 50000;
     
+    -- Variabile pentru ID-uri random
     TYPE t_id_array IS TABLE OF NUMBER;
     v_client_ids      t_id_array;
     v_dept_ids        t_id_array;
@@ -15,12 +17,15 @@ DECLARE
     v_agent_ids       t_id_array;
     v_tag_ids         t_id_array;
     
+    -- Variabile simple pentru a tine valorile extrase
     v_rnd_client      NUMBER;
     v_rnd_dept        NUMBER;
     v_rnd_prio        NUMBER;
     v_rnd_status      NUMBER;
     v_rnd_cat         NUMBER;
     v_rnd_agent       NUMBER;
+    v_rnd_topic       NUMBER;
+    v_rnd_tag         NUMBER;
     
     v_new_ticket_id   NUMBER;
     v_dt_creare       DATE;
@@ -47,11 +52,6 @@ BEGIN
     SELECT agent_id BULK COLLECT INTO v_agent_ids FROM TickLy.agent;
     SELECT tag_id BULK COLLECT INTO v_tag_ids FROM TickLy.tag;
 
-    IF v_client_ids.COUNT = 0 OR v_agent_ids.COUNT = 0 THEN
-        DBMS_OUTPUT.PUT_LINE('Eroare: Tabelele de baza (Client/Agent) sunt goale. Ruleaza insert-urile initiale.');
-        RETURN;
-    END IF;
-
     FOR i IN 1..v_rows_to_generate LOOP
         
         v_rnd_client := v_client_ids(TRUNC(DBMS_RANDOM.VALUE(1, v_client_ids.COUNT + 1)));
@@ -61,7 +61,7 @@ BEGIN
         v_rnd_cat    := v_cat_ids(TRUNC(DBMS_RANDOM.VALUE(1, v_cat_ids.COUNT + 1)));
         v_rnd_agent  := v_agent_ids(TRUNC(DBMS_RANDOM.VALUE(1, v_agent_ids.COUNT + 1)));
 
-        v_dt_creare := SYSDATE - DBMS_RANDOM.VALUE(1, 1095);
+        v_dt_creare := SYSDATE - DBMS_RANDOM.VALUE(1, 1095); 
         
         v_dt_rezolvare := NULL;
         v_dt_inchidere := NULL;
@@ -70,7 +70,6 @@ BEGIN
         IF v_rnd_status >= 4 THEN 
             v_dt_rezolvare := v_dt_creare + DBMS_RANDOM.VALUE(0.04, 10);
             v_timp_ore := ROUND((v_dt_rezolvare - v_dt_creare) * 24, 1);
-            
             v_dt_inchidere := v_dt_rezolvare + DBMS_RANDOM.VALUE(0.1, 2);
         END IF;
 
@@ -84,21 +83,25 @@ BEGIN
         ) VALUES (
             v_rnd_client, v_rnd_dept, v_rnd_prio, v_rnd_status, v_rnd_cat,
             v_titlu_generat, 
-            'Descriere generata automat pentru tichetul ' || i || '. Lorem ipsum dolor sit amet.',
+            'Descriere generata automat pentru tichetul ' || i || '.',
             v_dt_creare, v_dt_rezolvare, v_dt_inchidere, v_timp_ore
         ) RETURNING ticket_id INTO v_new_ticket_id;
 
         INSERT INTO TickLy.ticket_agent (ticket_id, agent_id, rol, data_asignare)
         VALUES (v_new_ticket_id, v_rnd_agent, 'PRIMARY', v_dt_creare + 0.01);
 
-        IF DBMS_RANDOM.VALUE > 0.2 THEN
+        IF DBMS_RANDOM.VALUE > 0.2 AND v_topic_ids.COUNT > 0 THEN
+            v_rnd_topic := v_topic_ids(TRUNC(DBMS_RANDOM.VALUE(1, v_topic_ids.COUNT + 1)));
+            
             INSERT INTO TickLy.ticket_topic (ticket_id, topic_id, relevanta)
-            VALUES (v_new_ticket_id, v_topic_ids(TRUNC(DBMS_RANDOM.VALUE(1, v_topic_ids.COUNT + 1))), 'DIRECT');
+            VALUES (v_new_ticket_id, v_rnd_topic, 'DIRECT');
         END IF;
 
-        IF DBMS_RANDOM.VALUE > 0.7 THEN
+        IF DBMS_RANDOM.VALUE > 0.7 AND v_tag_ids.COUNT > 0 THEN
+            v_rnd_tag := v_tag_ids(TRUNC(DBMS_RANDOM.VALUE(1, v_tag_ids.COUNT + 1)));
+            
             INSERT INTO TickLy.ticket_tag (ticket_id, tag_id)
-            VALUES (v_new_ticket_id, v_tag_ids(TRUNC(DBMS_RANDOM.VALUE(1, v_tag_ids.COUNT + 1))));
+            VALUES (v_new_ticket_id, v_rnd_tag);
         END IF;
 
         IF MOD(i, v_batch_size) = 0 THEN

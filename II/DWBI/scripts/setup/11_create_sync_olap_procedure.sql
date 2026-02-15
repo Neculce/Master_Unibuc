@@ -62,6 +62,17 @@ BEGIN
     LEFT JOIN (SELECT ticket_id, MIN(topic_id) as topic_id FROM TickLy.ticket_topic GROUP BY ticket_id) tt ON t.ticket_id = tt.ticket_id
     LEFT JOIN TickLy_DW.dim_topic dtop ON tt.topic_id = dtop.topic_id
     WHERE t.ticket_id NOT IN (SELECT ticket_id FROM TickLy_DW.fact_ticket);
+    BEGIN
+        DBMS_MVIEW.REFRESH('TickLy_DW.mv_report_trend', 'C');
+        DBMS_MVIEW.REFRESH('TickLy_DW.mv_report_top_topics', 'C');
+        DBMS_MVIEW.REFRESH('TickLy_DW.mv_report_agents', 'C');
+        DBMS_MVIEW.REFRESH('TickLy_DW.mv_report_dept_perf', 'C');
+        DBMS_MVIEW.REFRESH('TickLy_DW.mv_report_sla', 'C');
+        DBMS_OUTPUT.PUT_LINE('MV Refresh realizat cu succes.');
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Refresh MW failed: ' || SQLERRM);
+    END;
     COMMIT;
 END;
 /

@@ -12,12 +12,50 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const withStats = searchParams.get("stats") === "1" || searchParams.get("stats") === "true";
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10) || 20));
+  const statusFilter = searchParams.get("statusFilter") ?? "all";
+  const statusNames = searchParams.get("status");
 
   try {
     const result = await runQuery(async (conn) => {
       const isClient = session.role === "client";
-      const sql = isClient
-        ? `SELECT t.ticket_id, t.titlu, t.data_creare, t.data_ultima_actualizare, t.data_rezolvare,
+      const baseWhere = isClient ? "t.client_id = :client_id" : "1=1";
+      const clientBinds: (string | number)[] = isClient ? [session.id] : [];
+
+      let statusWhere = "";
+      const statusBinds: string[] = [];
+      if (isClient) {
+        if (statusFilter === "open") statusWhere = " AND s.este_final = 'N'";
+        else if (statusFilter === "closed") statusWhere = " AND s.este_final = 'Y'";
+      } else if (statusNames && statusNames.trim()) {
+        const names = statusNames.split(",").map((n) => n.trim()).filter(Boolean);
+        if (names.length) {
+          statusWhere = " AND s.nume IN (" + names.map((_, i) => ":sn" + i).join(",") + ")";
+        }
+      }
+      const whereClause = baseWhere + statusWhere;
+      const statusNamesList = !isClient && statusNames?.trim()
+        ? statusNames.split(",").map((n) => n.trim()).filter(Boolean)
+        : [];
+
+      // Build bind object for count and select (Oracle named binds)
+      const countBinds: Record<string, unknown> = {};
+      if (isClient) countBinds.client_id = session.id;
+      statusNamesList.forEach((name, i) => {
+        (countBinds as Record<string, unknown>)["sn" + i] = name;
+      });
+      const pageBinds = { ...countBinds, off: (page - 1) * limit, lim: limit };
+
+      // Count total for current filter
+      const countSql =
+        `SELECT COUNT(*) AS cnt FROM TickLy.ticket t JOIN TickLy.status s ON s.status_id = t.status_id WHERE ` +
+        whereClause;
+      const countResult = await conn.execute(countSql, countBinds);
+      const filteredTotal = Number((countResult.rows as Record<string, unknown>[])?.[0]?.CNT ?? 0);
+
+      const sql =
+        `SELECT t.ticket_id, t.titlu, t.data_creare, t.data_ultima_actualizare, t.data_rezolvare,
                 s.nume AS status_nume, p.nume AS prioritate_nume, d.nume AS departament_nume,
                 c.email AS client_email,
                 NVL(f.prenume||' '||f.nume, j.denumire) AS client_nume
@@ -28,24 +66,11 @@ export async function GET(request: Request) {
          JOIN TickLy.client c ON c.client_id = t.client_id
          LEFT JOIN TickLy.client_fizica f ON f.client_id = c.client_id
          LEFT JOIN TickLy.client_juridica j ON j.client_id = c.client_id
-         WHERE t.client_id = :client_id
-         ORDER BY NVL(t.data_ultima_actualizare, t.data_creare) DESC, t.data_creare DESC
-         FETCH FIRST 100 ROWS ONLY`
-        : `SELECT t.ticket_id, t.titlu, t.data_creare, t.data_ultima_actualizare, t.data_rezolvare,
-                s.nume AS status_nume, p.nume AS prioritate_nume, d.nume AS departament_nume,
-                c.email AS client_email,
-                NVL(f.prenume||' '||f.nume, j.denumire) AS client_nume
-         FROM TickLy.ticket t
-         JOIN TickLy.status s ON s.status_id = t.status_id
-         JOIN TickLy.prioritate p ON p.prioritate_id = t.prioritate_id
-         JOIN TickLy.departament d ON d.departament_id = t.departament_id
-         JOIN TickLy.client c ON c.client_id = t.client_id
-         LEFT JOIN TickLy.client_fizica f ON f.client_id = c.client_id
-         LEFT JOIN TickLy.client_juridica j ON j.client_id = c.client_id
-         ORDER BY NVL(t.data_ultima_actualizare, t.data_creare) DESC, t.data_creare DESC
-         FETCH FIRST 100 ROWS ONLY`;
-      const binds = isClient ? [session.id] : [];
-      const r = await conn.execute(sql, binds);
+         WHERE ` +
+        whereClause +
+        ` ORDER BY NVL(t.data_ultima_actualizare, t.data_creare) DESC, t.data_creare DESC
+         OFFSET :off ROWS FETCH NEXT :lim ROWS ONLY`;
+      const r = await conn.execute(sql, pageBinds);
       const raw = (r.rows as Record<string, unknown>[]) || [];
       const tickets = raw.map((row) => ({
         ticket_id: row.TICKET_ID,
@@ -60,9 +85,8 @@ export async function GET(request: Request) {
         client_nume: row.CLIENT_NUME,
       }));
 
-      if (!withStats) return tickets;
+      if (!withStats) return { tickets, total: filteredTotal };
 
-      // Lista statusurilor din DB + număr ticketuri per status (ordonare după status_id)
       const statsSql = isClient
         ? `SELECT s.status_id, s.nume, s.este_final, NVL(t.cnt, 0) AS cnt
            FROM TickLy.status s
@@ -76,12 +100,12 @@ export async function GET(request: Request) {
              SELECT status_id, COUNT(*) AS cnt FROM TickLy.ticket GROUP BY status_id
            ) t ON t.status_id = s.status_id
            ORDER BY s.status_id`;
-      const statsResult = await conn.execute(statsSql, binds);
+      const statsResult = await conn.execute(statsSql, isClient ? { client_id: session.id } : {});
       const statsRows = (statsResult.rows as Record<string, unknown>[]) || [];
-      let total = 0;
+      let statsTotal = 0;
       const statuses = statsRows.map((row) => {
         const count = Number(row.CNT ?? 0);
-        total += count;
+        statsTotal += count;
         return {
           status_id: row.STATUS_ID,
           nume: String(row.NUME ?? ""),
@@ -92,8 +116,9 @@ export async function GET(request: Request) {
 
       return {
         tickets,
+        total: filteredTotal,
         stats: {
-          total,
+          total: statsTotal,
           statuses,
         },
       };
@@ -107,6 +132,81 @@ export async function GET(request: Request) {
     console.error("tickets api", e);
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Failed to fetch tickets" },
+      { status: 500 }
+    );
+  }
+}
+
+import oracledb from "oracledb";
+
+if (!oracledb.outFormat) {
+  oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
+}
+
+export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session || !session.id) {
+    return NextResponse.json({ error: "Trebuie să fii autentificat pentru a crea un tichet." }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { titlu, descriere, departament_id, prioritate_id, categorie_id } = body;
+
+    if (!titlu || !departament_id || !prioritate_id) {
+      return NextResponse.json(
+        { error: "Te rog completează toate câmpurile obligatorii (Titlu, Departament, Prioritate)." }, 
+        { status: 400 }
+      );
+    }
+
+    const result = await runQuery(async (conn) => {
+      const statusRes = await conn.execute(
+        `SELECT status_id FROM TickLy.status WHERE este_final = 'N' ORDER BY status_id FETCH FIRST 1 ROWS ONLY`
+      );
+      
+      const rows = statusRes.rows as Record<string, any>[];
+      const defaultStatusId = rows?.[0]?.STATUS_ID;
+
+      if (!defaultStatusId) {
+        throw new Error("Nu s-a găsit niciun status valid (nefinal) în baza de date.");
+      }
+
+      const sql = `
+        INSERT INTO TickLy.ticket 
+          (client_id, departament_id, prioritate_id, status_id, categorie_id, titlu, descriere, data_creare)
+        VALUES 
+          (:client_id, :dep_id, :prio_id, :stat_id, :cat_id, :titlu, :descriere, SYSDATE)
+        RETURNING ticket_id INTO :new_id
+      `;
+
+      const cleanBind = (val: any) => (val === undefined || val === "" || Number.isNaN(val) ? null : val);
+
+      const binds = {
+        client_id: session.id,
+        dep_id: Number(departament_id),
+        prio_id: Number(prioritate_id),
+        stat_id: defaultStatusId,
+        cat_id: categorie_id ? Number(categorie_id) : null,
+        titlu: titlu,
+        descriere: cleanBind(descriere), 
+        new_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+      };
+
+      const r = await conn.execute(sql, binds, { autoCommit: true });
+
+      const outBinds = r.outBinds as any;
+      const newTicketId = outBinds?.new_id?.[0] ?? outBinds?.new_id;
+
+      return { ticket_id: newTicketId, message: "Tichet creat cu succes!" };
+    });
+
+    return NextResponse.json(result);
+
+  } catch (e: any) {
+    console.error("Eroare la crearea tichetului:", e);
+    return NextResponse.json(
+      { error: e.message || "A apărut o eroare la salvarea tichetului." }, 
       { status: 500 }
     );
   }

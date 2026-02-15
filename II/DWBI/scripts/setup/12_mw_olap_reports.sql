@@ -17,6 +17,7 @@ FROM TickLy_DW.fact_ticket f
 JOIN TickLy_DW.dim_departament d ON f.departament_key = d.departament_key
 JOIN TickLy_DW.dim_time t ON f.date_creare_key = t.date_key
 GROUP BY d.nume, t.an;
+GRANT SELECT ON TickLy_DW.mv_dept_yearly_stats TO TickLy;
 
 -- 1. LINE CHART
 CREATE MATERIALIZED VIEW TickLy_DW.mv_report_trend
@@ -34,6 +35,7 @@ FROM TickLy_DW.fact_ticket f
 JOIN TickLy_DW.dim_time t ON f.date_creare_key = t.date_key
 WHERE t.an >= TO_NUMBER(TO_CHAR(SYSDATE, 'YYYY')) - 1
 GROUP BY t.an, t.luna, t.luna_nume, TO_NUMBER(TO_CHAR(t.data_completa, 'YYYYMM'));
+GRANT SELECT ON TickLy_DW.mv_report_trend TO TickLy;
 
 -- 2. BAR CHART
 CREATE MATERIALIZED VIEW TickLy_DW.mv_report_top_topics
@@ -47,6 +49,7 @@ SELECT
 FROM TickLy_DW.fact_ticket f
 JOIN TickLy_DW.dim_topic dt ON f.topic_key = dt.topic_key
 GROUP BY dt.nume, dt.topic_type;
+GRANT SELECT ON TickLy_DW.mv_report_top_topics TO TickLy;
 
 -- 3. SCATTER PLOT
 CREATE MATERIALIZED VIEW TickLy_DW.mv_report_agents
@@ -63,6 +66,7 @@ JOIN TickLy_DW.dim_agent da ON f.agent_key = da.agent_key
 JOIN TickLy_DW.dim_departament dd ON f.departament_key = dd.departament_key
 WHERE f.status_este_final = 'Y' 
 GROUP BY da.nume_complet, dd.nume;
+GRANT SELECT ON TickLy_DW.mv_report_agents TO TickLy;
 
 -- 4. LINE CHART
 CREATE MATERIALIZED VIEW TickLy_DW.mv_report_dept_perf
@@ -83,6 +87,7 @@ JOIN TickLy_DW.dim_time t ON f.date_rezolvare_key = t.date_key
 WHERE f.status_este_final = 'Y'
   AND t.an >= TO_NUMBER(TO_CHAR(SYSDATE, 'YYYY')) - 1
 GROUP BY d.nume, t.an, t.luna, t.luna_nume, TO_NUMBER(TO_CHAR(t.data_completa, 'YYYYMM'));
+GRANT SELECT ON TickLy_DW.mv_report_dept_perf TO TickLy;
 
 -- 5. SLA GAUGE
 CREATE MATERIALIZED VIEW TickLy_DW.mv_report_sla
@@ -103,5 +108,6 @@ JOIN TickLy_DW.dim_time t ON f.date_rezolvare_key = t.date_key
 WHERE f.prioritate_nume = 'Critica'
   AND f.status_este_final = 'Y'
 GROUP BY f.prioritate_nume, t.an, t.luna;
+GRANT SELECT ON TickLy_DW.mv_report_sla TO TickLy;
 
 COMMIT;

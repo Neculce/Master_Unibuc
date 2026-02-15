@@ -38,9 +38,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cp II/DWBI/docs/analysis/main.pdf II/DWBI/docs/analysis/DWBI_Analysis_Report.pdf
+          cp II/DWBI/docs/analysis/main.pdf II/DWBI/docs/analysis/DWBI_Project.pdf
           gh release delete dwbi-docs-latest --yes 2>/dev/null || true
           gh release create dwbi-docs-latest \
-            --title "DW&BI Analysis Report (latest)" \
+            --title "DW&BI Project (latest)" \
             --notes "Built from ${{ github.ref_name }} at ${{ github.sha }}." \
-            II/DWBI/docs/analysis/DWBI_Analysis_Report.pdf
+            II/DWBI/docs/analysis/DWBI_Project.pdf

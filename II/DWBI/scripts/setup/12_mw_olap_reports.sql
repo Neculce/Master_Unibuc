@@ -1,5 +1,23 @@
 ALTER SESSION SET CONTAINER = orclpdb1;
 
+-- cerinta 9
+CREATE MATERIALIZED VIEW TickLy_DW.mv_dept_yearly_stats
+BUILD IMMEDIATE
+REFRESH COMPLETE ON DEMAND
+ENABLE QUERY REWRITE AS
+SELECT 
+    d.nume AS departament_nume,
+    t.an,
+    COUNT(f.ticket_id) AS mv_total_tichete,
+    SUM(f.cost_estimativ) AS mv_venit_total,
+    COUNT(f.cost_estimativ) AS mv_count_venit,
+    SUM(f.timp_rezolvare_ore) AS mv_sum_timp,
+    COUNT(f.timp_rezolvare_ore) AS mv_count_timp
+FROM TickLy_DW.fact_ticket f
+JOIN TickLy_DW.dim_departament d ON f.departament_key = d.departament_key
+JOIN TickLy_DW.dim_time t ON f.date_creare_key = t.date_key
+GROUP BY d.nume, t.an;
+
 -- 1. LINE CHART
 CREATE MATERIALIZED VIEW TickLy_DW.mv_report_trend
 BUILD IMMEDIATE

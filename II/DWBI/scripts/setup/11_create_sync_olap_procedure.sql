@@ -68,6 +68,7 @@ BEGIN
         DBMS_MVIEW.REFRESH('TickLy_DW.mv_report_agents', 'C');
         DBMS_MVIEW.REFRESH('TickLy_DW.mv_report_dept_perf', 'C');
         DBMS_MVIEW.REFRESH('TickLy_DW.mv_report_sla', 'C');
+        DBMS_MVIEW.REFRESH('TickLy_DW.mv_dept_yearly_stats', 'C');
         DBMS_OUTPUT.PUT_LINE('MV Refresh realizat cu succes.');
     EXCEPTION
         WHEN OTHERS THEN

@@ -171,6 +171,8 @@ SUBPARTITION BY HASH (topic_key) SUBPARTITIONS 4
    PARTITION fact_tickets_viitor VALUES LESS THAN (MAXVALUE) 
 );
 
+GRANT SELECT ON TickLy_DW.fact_ticket TO TickLy;
+
 CREATE TABLE TickLy_DW.bridge_ticket_tag (
     bridge_id       NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     fact_ticket_id  NUMBER NOT NULL,

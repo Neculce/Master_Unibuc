@@ -1,0 +1,46 @@
+\chapter{Constrângerile OLAP}
+\label{sec:constrainturi}
+
+\section{Constrângeri de Integritate Referențială (FK)}
+
+Relațiile dintre tabelul de fapte și dimensiuni sunt gestionate prin chei străine (FK). Pentru optimizarea procesului ETL, acestea sunt definite cu clauza \textbf{RELY DISABLE NOVALIDATE}.
+
+\begin{itemize}
+    \item \textbf{FK\_FACT\_CLIENT / AGENT / DEPARTAMENT / TOPIC}: Asigură legătura dintre cheile surogat din \texttt{FACT\_TICKET} și dimensiunile corespunzătoare.
+    \item \textbf{FK\_FACT\_CAT}: Referință către \texttt{DIM\_CATEGORIE} (permite valori NULL).
+    \item \textbf{FK\_FACT\_DT\_CR}: Legătura cu dimensiunea temporală \texttt{DIM\_TIME} pe data creării.
+    \item \textbf{FK\_BRIDGE\_FACT / DIM}: Cheile străine din tabela de legătură către fapte și tag-uri.
+\end{itemize}
+
+\section{Constrângeri de Unicitate (UNIQUE)}
+
+Aceste constrângeri garantează integritatea datelor și corectitudinea mecanismelor de istoricizare:
+
+\begin{itemize}
+    \item \textbf{UK\_FACT\_TICKET\_ID}: Asigură că un tichet din sursă apare o singură dată în tabelul de fapte.
+    \item \textbf{UK\_DIM\_***\_ID}: Definite pe perechea \texttt{(id\_sursa, valid\_from)} pentru dimensiunile \texttt{CLIENT}, \texttt{AGENT} și \texttt{DEPARTAMENT}. Acestea permit implementarea versiunării istorice (SCD Type 2).
+    \item \textbf{UK\_DIM\_TIME\_DATA}: Garantează unicitatea fiecărei date calendaristice în dimensiunea de timp.
+\end{itemize}
+
+\section{Constrângeri CHECK}
+
+\begin{itemize}
+    \item \textbf{CHECK pentru DIM\_TIME}:
+    \begin{itemize}
+        \item \texttt{trimestru BETWEEN 1 AND 4}
+        \item \texttt{luna BETWEEN 1 AND 12}
+        \item \texttt{zi BETWEEN 1 AND 31}
+        \item \texttt{saptamana\_an BETWEEN 1 AND 53}
+        \item \texttt{zi\_saptamana BETWEEN 1 AND 7}
+        \item \texttt{este\_weekend IN ('Y', 'N')}
+    \end{itemize}
+\end{itemize}
+
+\section{Justificarea Constrângerilor}
+
+\begin{enumerate}
+    \item \textbf{FK (Foreign Key):} Asigură integritatea referențială, garantând că orice cheie străină din tabelul de fapte există în dimensiunea corespunzătoare (fără date orfane).
+    \item \textbf{UNIQUE (SCD Type 2):} Permite păstrarea istoricului modificărilor prin validarea unicității combinației dintre ID-ul entității și intervalul de valabilitate.
+    \item \textbf{CHECK:} Filtrează erorile logice la nivel de date (ex: luna să fie între 1-12), asigurând consistența informațiilor.
+    \item \textbf{UK\_FACT\_TICKET\_ID:} Previne duplicarea tichetelor în timpul procesului ETL, garantând o corespondență 1:1 cu sistemul sursă OLTP.
+\end{enumerate}

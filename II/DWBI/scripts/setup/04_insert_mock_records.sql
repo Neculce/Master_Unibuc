@@ -15,7 +15,7 @@ INSERT INTO TickLy.status (nume, descriere, este_final) VALUES ('In asteptare', 
 INSERT INTO TickLy.status (nume, descriere, este_final) VALUES ('Rezolvat', 'Solutie aplicata', 'Y');
 INSERT INTO TickLy.status (nume, descriere, este_final) VALUES ('Inchis', 'Ticket inchis', 'Y');
 
--- Agent (password_hash = placeholder for hashed password; e.g. use bcrypt in app) --
+-- Agent
 INSERT INTO TickLy.agent (nume, prenume, email, password_hash, telefon, hire_date, is_active)
 VALUES ('Popescu', 'Maria', 'maria.popescu@tickly.ro', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0722111001', DATE '2022-01-15', 'Y');
 INSERT INTO TickLy.agent (nume, prenume, email, password_hash, telefon, hire_date, is_active)
@@ -27,7 +27,7 @@ VALUES ('Dumitrescu', 'Alexandru', 'alex.dumitrescu@tickly.ro', '$2b$10$92IXUNpk
 INSERT INTO TickLy.agent (nume, prenume, email, password_hash, telefon, hire_date, is_active)
 VALUES ('Stan', 'Ioana', 'ioana.stan@tickly.ro', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0722111005', DATE '2024-01-15', 'Y');
 
--- Client (F = fizica, J = juridica; password_hash = placeholder for hashed password) --
+-- Client (F = fizica, J = juridica;
 INSERT INTO TickLy.client (email, password_hash, phone, registration_date, client_type)
 VALUES ('ion.vasile@gmail.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0733123456', DATE '2023-01-10', 'F');
 INSERT INTO TickLy.client (email, password_hash, phone, registration_date, client_type)

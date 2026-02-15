@@ -798,3 +798,51 @@ Similar, dimensiunea topicurilor este partiționată pe \texttt{topic\_type} pen
     \end{figure}
 
 \end{enumerate}
+
+\chapter{Tehnici de Optimizare}
+\label{sec:optimizare}
+
+\section{Cerere SQL complexă}
+
+\textbf{Cerere:}
+„Vreau un raport care să compare, pentru fiecare departament mare (spre exemplu, peste 1000 tichete), veniturile generate și timpul mediu de rezolvare din anul curent față de anul precedent, pentru a vedea creșterea procentuală.”
+
+\section{Tehnica de optimizare: Materialized Views}
+
+Deoarece interogarea de mai sus implică scanarea întregului istoric și calcule repetitive, se va utiliza  \textbf{Materialized View} care să stocheze rezultatele gata calculate.
+
+\subsection{Avantaje și Dezavantaje}
+
+\begin{itemize}
+    \item \textbf{Avantaj (Viteză):} Oracle nu mai calculează sumele de fiecare dată când rulăm raportul. Răspunsul vine instantaneu pentru că citește dintr-un tabel fizic pre-calculat.
+    \item \textbf{Dezavantaj (Latență):} Datele nu sunt actualizate în timp real. Trebuie programat un refresh (spre exemplu noaptea), deci raportul nu vede tichetele din ultima oră.
+    \item \textbf{Dezavantaj (Spațiu):} Ocupă spațiu suplimentar pe disc, spre deosebire de un View simplu care nu stochează date.
+\end{itemize}
+
+\chapter{Rapoarte Propuse}
+\label{sec:rapoarte}
+
+\section{Line Chart: Evoluția lunară a tichetelor}
+\textbf{Ce afișează:} Un grafic liniar cu două linii: tichete deschise vs. tichete rezolvate pe ultimele 12 luni.
+\newline
+\textbf{Cerere:} Să vedem dacă agenții fac față volumului de muncă sau dacă se acumulează restanțe (Backlog).
+
+\section{Bar Chart: Top Probleme}
+\textbf{Ce afișează:} Un top 10 al celor mai frecvente subiecte (Topics), ordonate descrescător după numărul de tichete.
+\newline
+\textbf{Cerere:} Identificarea problemelor recurente pentru a prioritiza crearea de documentație și articole KB.
+
+\section{Scatter Plot: Eficiența Agenților}
+\textbf{Ce afișează:} Un grafic de tip "puncte" unde axa X este numărul de tichete rezolvate, iar axa Y este timpul mediu de rezolvare.
+\newline
+\textbf{Cerere:} Identificarea rapidă a agenților performanți (multe tichete, timp scurt) față de cei care au nevoie de training suplimentar.
+
+\section{Map Chart: Harta Clienților}
+\textbf{Ce afișează:} O hartă colorată în funcție de numărul de tichete deschise în fiecare județ, filtrabilă după tipul clientului (Fizic/Juridic).
+\newline
+\textbf{Cerere:} Analiza distribuției geografice a solicitărilor pentru a optimiza resursele zonale.
+
+\section{Gauge Chart: Monitorizare SLA}
+\textbf{Ce afișează:} Un grafic tip "vitezometru" care arată procentul de tichete critice rezolvate la timp în luna curentă (Target: 95\%).
+\newline
+\textbf{Cerere:} Monitorizarea în timp real a obligațiilor contractuale pentru a evita penalitățile.

@@ -216,8 +216,6 @@ Modelul stea implementat pentru TickLy conține:
 
 \section{Tabelul de Legătură: BRIDGE\_TICKET\_TAG}
 
-Tabelul de legătură (bridge) permite relația many-to-many între tichete și tag-uri în depozit: un ticket poate avea mai multe tag-uri, iar un tag poate fi asociat la mai multe tichete. Este populat de scriptul ETL \texttt{04\_load\_bridge.sql}, după ce \texttt{FACT\_TICKET} și \texttt{DIM\_TAG} sunt deja populate.
-
 \subsubsection{Câmpuri și Sursa de Date}
 
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}p{2.8cm}|>{\raggedright\arraybackslash}p{8.7cm}|}
@@ -494,8 +492,6 @@ Tabelul de legătură (bridge) permite relația many-to-many între tichete și 
 
 \section{Dimensiunea: DIM\_TIME}
 
-Dimensiunea temporală este populată prin scriptul ETL \texttt{01\_load\_dim\_time.sql}, care generează toate zilele dintr-un interval (ex. 2020--2030). Câmpurile sunt calculate pe baza datei (\texttt{curr\_date}):
-
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}p{2.8cm}|>{\raggedright\arraybackslash}p{8.7cm}|}
 \hline
 \textbf{Câmp} & \textbf{Tip} & \textbf{Mod de Populare} \\
@@ -534,43 +530,30 @@ Dimensiunea temporală este populată prin scriptul ETL \texttt{01\_load\_dim\_t
 \hline
 \ttwrap{este\_weekend} & CHAR(1) & 'Y' dacă Sâmbătă/Duminică (\texttt{DY IN ('SAT','SUN')}), altfel 'N' \\
 \hline
-\ttwrap{este\_sarbatoare} & CHAR(1) & Opțional în schema; poate fi populat cu logică de sărbători legale \\
-\hline
-\ttwrap{nume\_sarbatoare} & VARCHAR2 & Opțional; numele sărbătorii dacă există \\
-\hline
-\ttwrap{zi\_lucratoare} & CHAR(1) & Opțional; 'Y'/'N' în funcție de weekend/sărbătoare \\
-\hline
 \end{longtable}
 
-\chapter{Constrângerile Specifice Depozitelor de Date}
+\chapter{Constrângerile OLAP}
 \label{sec:constrainturi}
 
-\section{Constrângeri de Integritate Referențială}
+\section{Constrângeri de Integritate Referențială (FK)}
 
-Toate tabelele dimensiune și tabelul de fapte folosesc constrângeri de cheie străină (FK). În implementare, FK-urile din \texttt{FACT\_TICKET} și \texttt{BRIDGE\_TICKET\_TAG} sunt definite cu \textbf{RELY DISABLE NOVALIDATE}.
+Relațiile dintre tabelul de fapte și dimensiuni sunt gestionate prin chei străine (FK). Pentru optimizarea procesului ETL, acestea sunt definite cu clauza \textbf{RELY DISABLE NOVALIDATE}.
 
 \begin{itemize}
-    \item \textbf{FK\_FACT\_CLIENT}: \texttt{FACT\_TICKET.client\_key} $\rightarrow$ \texttt{DIM\_CLIENT.client\_key}
-    \item \textbf{FK\_FACT\_AGENT}: \texttt{FACT\_TICKET.agent\_key} $\rightarrow$ \texttt{DIM\_AGENT.agent\_key}
-    \item \textbf{FK\_FACT\_DEPT}: \texttt{FACT\_TICKET.departament\_key} $\rightarrow$ \texttt{DIM\_DEPARTAMENT.departament\_key}
-    \item \textbf{FK\_FACT\_CAT}: \texttt{FACT\_TICKET.categorie\_key} $\rightarrow$ \texttt{DIM\_CATEGORIE.categorie\_key} (poate fi NULL)
-    \item \textbf{FK\_FACT\_TOPIC}: \texttt{FACT\_TICKET.topic\_key} $\rightarrow$ \texttt{DIM\_TOPIC.topic\_key}
-    \item \textbf{FK\_FACT\_DT\_CR}: \texttt{FACT\_TICKET.date\_creare\_key} $\rightarrow$ \texttt{DIM\_TIME.date\_key}
-    \item \textbf{FK\_BRIDGE\_FACT} / \textbf{FK\_BRIDGE\_DIM}: în \texttt{BRIDGE\_TICKET\_TAG}, legături către \texttt{FACT\_TICKET} și \texttt{DIM\_TAG}
+    \item \textbf{FK\_FACT\_CLIENT / AGENT / DEPARTAMENT / TOPIC}: Asigură legătura dintre cheile surogat din \texttt{FACT\_TICKET} și dimensiunile corespunzătoare.
+    \item \textbf{FK\_FACT\_CAT}: Referință către \texttt{DIM\_CATEGORIE} (permite valori NULL).
+    \item \textbf{FK\_FACT\_DT\_CR}: Legătura cu dimensiunea temporală \texttt{DIM\_TIME} pe data creării.
+    \item \textbf{FK\_BRIDGE\_FACT / DIM}: Cheile străine din tabela de legătură către fapte și tag-uri.
 \end{itemize}
 
-\subsubsection{RELY DISABLE NOVALIDATE}
+\section{Constrângeri de Unicitate (UNIQUE)}
 
-FK-urile de la \texttt{FACT\_TICKET} și \texttt{BRIDGE\_TICKET\_TAG} către dimensiuni sunt create cu clauzele \texttt{RELY}, \texttt{DISABLE} și \texttt{NOVALIDATE}:
-
-\section{Constrângeri UNIQUE}
+Aceste constrângeri garantează integritatea datelor și corectitudinea mecanismelor de istoricizare:
 
 \begin{itemize}
-    \item \textbf{UK\_FACT\_TICKET\_ID}: Asigură că fiecare \texttt{ticket\_id} apare o singură dată în \texttt{FACT\_TICKET} (prevenirea duplicatelor)
-    \item \textbf{UK\_DIM\_CLIENT\_ID}: Asigură unicitatea combinației \texttt{(client\_id, valid\_from)} pentru SCD Type 2
-    \item \textbf{UK\_DIM\_AGENT\_ID}: Asigură unicitatea combinației \texttt{(agent\_id, valid\_from)} pentru SCD Type 2
-    \item \textbf{UK\_DIM\_DEPARTAMENT\_ID}: Asigură unicitatea combinației \texttt{(departament\_id, valid\_from)} pentru SCD Type 2
-    \item \textbf{UK\_DIM\_TIME\_DATA}: Asigură că fiecare dată apare o singură dată în \texttt{DIM\_TIME}
+    \item \textbf{UK\_FACT\_TICKET\_ID}: Asigură că un tichet din sursă apare o singură dată în tabelul de fapte.
+    \item \textbf{UK\_DIM\_***\_ID}: Definite pe perechea \texttt{(id\_sursa, valid\_from)} pentru dimensiunile \texttt{CLIENT}, \texttt{AGENT} și \texttt{DEPARTAMENT}. Acestea permit implementarea versiunării istorice (SCD Type 2).
+    \item \textbf{UK\_DIM\_TIME\_DATA}: Garantează unicitatea fiecărei date calendaristice în dimensiunea de timp.
 \end{itemize}
 
 \section{Constrângeri CHECK}
@@ -587,19 +570,15 @@ FK-urile de la \texttt{FACT\_TICKET} și \texttt{BRIDGE\_TICKET\_TAG} către dim
         \item \texttt{este\_sarbatoare IN ('Y', 'N')}
         \item \texttt{zi\_lucratoare IN ('Y', 'N')}
     \end{itemize}
-    \item \textbf{CHECK pentru FACT\_TICKET}: (dacă există câmp \texttt{rating\_feedback}, între 1 și 5; în implementarea curentă nu e prezent în fact.)
 \end{itemize}
 
 \section{Justificarea Constrângerilor}
 
 \begin{enumerate}
-    \item \textbf{Constrângerile FK} previn inserarea de înregistrări orfane în tabelul de fapte și asigură că toate referințele la dimensiuni sunt valide.
-    
-    \item \textbf{Constrângerile UNIQUE} Mai multe înregistrări ale aceleiași entități cu intervale de valabilitate diferite sunt permise pentru SCD Type 2, ceea ce permite o istoricizare precisă a modificărilor.
-    
-    \item \textbf{Constrângerile CHECK} asigură validitatea datelor la nivel de aplicație, prevenind erorile de logică (spre exemplu: trimestru 5, luna 13, rating 6).
-    
-    \item \textbf{UK\_FACT\_TICKET\_ID} este critică pentru a preveni duplicarea tichetelor în procesul ETL, asigurând că fiecare ticket din OLTP apare exact o dată în DW.
+    \item \textbf{FK (Foreign Key):} Asigură integritatea referențială, garantând că orice cheie străină din tabelul de fapte există în dimensiunea corespunzătoare (fără date orfane).
+    \item \textbf{UNIQUE (SCD Type 2):} Permite păstrarea istoricului modificărilor prin validarea unicității combinației dintre ID-ul entității și intervalul de valabilitate.
+    \item \textbf{CHECK:} Filtrează erorile logice la nivel de date (ex: luna să fie între 1-12), asigurând consistența informațiilor.
+    \item \textbf{UK\_FACT\_TICKET\_ID:} Previne duplicarea tichetelor în timpul procesului ETL, garantând o corespondență 1:1 cu sistemul sursă OLTP.
 \end{enumerate}
 
 \chapter{Obiecte de Tip Dimensiune}
@@ -649,35 +628,72 @@ Obiectul \texttt{dim\_topic\_dim} se bazează pe tabelul \texttt{DIM\_TOPIC} și
 
 \section{Tabelul FACT\_TICKET — partiționare compusă}
 
-\subsection{Tipuri de partiționare}
+\subsection{Tipuri de partiționare utilizate}
 
 \begin{itemize}
-    \item \textbf{Partiționare RANGE} pe \texttt{date\_creare\_key}: partiții pe ani (2023, 2024, \ldots, 2030) plus \texttt{fact\_tickets\_viitor} (\texttt{MAXVALUE}).
-    \item \textbf{Subpartiționare HASH} pe \texttt{topic\_key} în 4 subpartiții per partiție.
+    \item \textbf{Partiționare RANGE} pe \texttt{date\_creare\_key}: Datele sunt împărțite în intervale de timp ca anii. 
+    \item \textbf{Subpartiționare HASH} pe \texttt{topic\_key}: Fiecare an este divizat intern în 4 subpartiții.
 \end{itemize}
 
-\subsection{Partiții definite}
+\subsection{Definirea partițiilor}
 
-Partițiile RANGE sunt: \texttt{fact\_tickets\_2023} (VALUES LESS THAN 20240000), \texttt{fact\_tickets\_2024} (20250000), \ldots, \texttt{fact\_tickets\_2030} (20310000), \texttt{fact\_tickets\_viitor} (MAXVALUE).
+Partițiile RANGE sunt definite astfel:
+\begin{itemize}
+    \item \texttt{fact\_tickets\_2023} (VALUES LESS THAN 20240000)
+    \item \texttt{fact\_tickets\_2024} (VALUES LESS THAN 20250000)
+    \item \dots
+    \item \texttt{fact\_tickets\_viitor} (MAXVALUE) - pentru ticketele create după anul 2030.
+\end{itemize}
+
+\section{Tabelele Dimensionale — Partiționare prin Listă}
+
+Pentru dimensiunile \texttt{DIM\_CLIENT} și \texttt{DIM\_TOPIC}, s-a utilizat partiționarea prin liste.
+
+\subsection{Tabelul DIM\_CLIENT}
+
+\begin{itemize}
+    \item \textbf{Partiția \texttt{p\_clienti\_fizici}}: pentru valoarea 'F'.
+    \item \textbf{Partiția \texttt{p\_clienti\_juridici}}: pentru valoarea 'J'.
+    \item \textbf{Partiția \texttt{p\_clienti\_altele}}: pentru valori DEFAULT.
+\end{itemize}
+
+\subsection{Tabelul DIM\_TOPIC}
+
+Similar, dimensiunea topicurilor este partiționată pe \texttt{topic\_type} pentru a separa serviciile (manoperă, consultanță) de produsele fizice (hardware, licențe).
+
+\begin{itemize}
+    \item \textbf{Partiția \texttt{p\_topic\_servicii}}: pentru valoarea 'S'.
+    \item \textbf{Partiția \texttt{p\_topic\_produse}}: pentru valoarea 'P'.
+    \item \textbf{Partiția \texttt{p\_topic\_altele}}: pentru valori DEFAULT.
+\end{itemize}
 
 \section{Cereri în limbaj natural}
 
-\textbf{Cerere în limbaj natural nr 1:} „Să se calculeze numărul de tichete și timpul mediu de rezolvare (în ore) pentru tichetele create în anul 2024, grupate pe departament și pe status.”
+\textbf{1:} „Să se calculeze numărul de tichete și timpul mediu de rezolvare (în ore) pentru tichetele create în anul 2024, grupate pe departament și pe status.”
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/partitie_range.png}
-    \caption{Partiționare RANGE}
+    \caption{Plan execuție: Partiționare RANGE (PARTITION RANGE SINGLE)}
     \label{fig:partitie_range}
 \end{figure}
 
-\textbf{Cerere în limbaj natural nr 2:} „Analiza performanței pentru un anumit Topic critic (ex: ID 105) în anul 2024.”
+\textbf{2:} „Analiza performanței pentru un anumit Topic critic (ex: ID 105) în anul 2024.”
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/partitie_range_hash.png}
-    \caption{Partiționare RANGE și HASH}
+    \caption{Plan execuție: Partiționare RANGE și HASH}
     \label{fig:partitie_range_hash}
+\end{figure}
+
+\textbf{3:} „Lista tuturor clienților persoane juridice și CUI-ul acestora.”
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{../../scripts/tests/assets/partitie_list.png} 
+    \caption{Plan execuție: Partiționare LIST pe DIM\_CLIENT}
+    \label{fig:partitie_list_client}
 \end{figure}
 
 \chapter{Indecșii Specifici OLTP și Depozit}
@@ -726,7 +742,7 @@ Partițiile RANGE sunt: \texttt{fact\_tickets\_2023} (VALUES LESS THAN 20240000)
 \begin{enumerate}
     \item \textbf{OLTP — index function-based pe \texttt{client\_fizica}}
     \begin{itemize}
-        \item \textbf{Cerere în limbaj natural:} „Să se afișeze datele (identificator, CNP, nume, prenume) persoanelor fizice care au numele egal cu «RADU»”
+        \item \textbf{1:} „Să se afișeze datele (identificator, CNP, nume, prenume) persoanelor fizice care au numele egal cu «RADU»”
     \end{itemize}
 
     \begin{figure}[H]
@@ -745,7 +761,7 @@ Partițiile RANGE sunt: \texttt{fact\_tickets\_2023} (VALUES LESS THAN 20240000)
 
     \item \textbf{OLTP — index pe \texttt{ticket.data\_creare}}
     \begin{itemize}
-        \item \textbf{Cerere în limbaj natural:} „Să se afișeze identificatorul, titlul, statusul și data creării pentru toate tichetele create în anul 2024, între luna februarie și luna decembrie.”
+        \item \textbf{2:} „Să se afișeze identificatorul, titlul, statusul și data creării pentru toate tichetele create în anul 2024, între luna februarie și luna decembrie.”
     \end{itemize}
 
     \begin{figure}[H]
@@ -764,7 +780,7 @@ Partițiile RANGE sunt: \texttt{fact\_tickets\_2023} (VALUES LESS THAN 20240000)
 
     \item \textbf{Depozit — indecși bitmap pe \texttt{fact\_ticket}}
     \begin{itemize}
-        \item \textbf{Cerere în limbaj natural:} „Să se afișeze identificatorul din OLAP, cheia clientului și timpul de rezolvare (în ore) pentru tichetele care au un anumit status și/sau o anumită prioritate.”
+        \item \textbf{3:} „Să se afișeze identificatorul din OLAP, cheia clientului și timpul de rezolvare (în ore) pentru tichetele care au un anumit status și/sau o anumită prioritate.”
     \end{itemize}
 
     \begin{figure}[H]

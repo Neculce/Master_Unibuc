@@ -22,6 +22,12 @@ create table TickLy_DW.dim_client (
    load_date          DATE DEFAULT SYSDATE,
    CONSTRAINT pk_dim_client PRIMARY KEY (client_key) RELY,
    CONSTRAINT uk_dim_client_id UNIQUE ( client_id, valid_from )
+)
+PARTITION BY LIST (client_type)
+(
+    PARTITION p_clienti_fizici VALUES ('F'),
+    PARTITION p_clienti_juridici VALUES ('J'),
+    PARTITION p_clienti_altele VALUES (DEFAULT)
 );
 
 create table TickLy_DW.dim_agent (
@@ -88,6 +94,12 @@ create table TickLy_DW.dim_topic (
    load_date       DATE DEFAULT SYSDATE,
    CONSTRAINT pk_dim_topic PRIMARY KEY (topic_key) RELY,
    CONSTRAINT uk_dim_topic_id UNIQUE ( topic_id )
+)
+PARTITION BY LIST (topic_type)
+(
+    PARTITION p_topic_servicii VALUES ('S'),
+    PARTITION p_topic_produse  VALUES ('P'),
+    PARTITION p_topic_altele   VALUES (DEFAULT)
 );
 
 create table TickLy_DW.dim_tag (

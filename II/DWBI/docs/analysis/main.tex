@@ -121,13 +121,13 @@
 % Stiluri diferite de headere și footere
 \usepackage{fancyhdr}
 
-% Pachete necesare pentru raportul de analiză (tabele, liste, figuri)
 \usepackage{array}  % Necesar pentru \arraybackslash în tabele
 \usepackage{seqsplit}  % Pentru wrapping în \texttt{} pentru nume lungi
 \usepackage{float}
 \usepackage{longtable}
 \usepackage{booktabs}
 \usepackage{enumitem}
+\usepackage{subcaption}
 
 % Metadate — proiect TickLy DW\&BI
 \title{Data Warehouse și Business Intelligence\\
@@ -171,8 +171,20 @@
 \pagestyle{main}
 \let\ps@plain\ps@main
 
-\include{1-raport_analiza}
+\include{13-echipa}
+\include{1-descriere}
+\include{2-diagrame_oltp}
+\include{3-diagrama_olap}
+\include{4-olap}
+\include{5-contrangeri_olap}
+\include{6-indecsi}
+\include{7-dimensiuni}
+\include{8-partitions}
+\include{9-optimizare}
+\include{10-rapoarte}
+\include{11-aplicatie}
+\include{12-sql}
 
-% \printbibliography[heading=bibintoc]  % decomentează dacă folosești bibliography.bib
+% \printbibliography[heading=bibintoc]
 
 \end{document}

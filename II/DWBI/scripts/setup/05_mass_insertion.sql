@@ -28,7 +28,7 @@ DECLARE
     v_timp_ore        NUMBER;
     
 BEGIN
-    DBMS_OUTPUT.PUT_LINE('--- Incepere generare 100k tichete ---');
+    DBMS_OUTPUT.PUT_LINE('--- Incepere generare tichete ---');
     SELECT client_id BULK COLLECT INTO v_client_ids FROM TickLy.client;
     SELECT departament_id BULK COLLECT INTO v_dept_ids FROM TickLy.departament;
     SELECT prioritate_id BULK COLLECT INTO v_prio_ids FROM TickLy.prioritate;

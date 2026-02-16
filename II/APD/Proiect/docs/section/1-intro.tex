@@ -1,16 +1,18 @@
 \section{Introducere}
 \label{sec:intro}
 
-în contextul actual, unde IoT (Internet of Things) se tot expandează, și se îmbunătățește conectivitatea, împreună cu îmbunătățirea arhitecturilor Cloud native, se pune problema monitorizării și controlului în timp real a sistemelor.
-În ultimii ani, aplicațiile sau/și serviciile au început să fie mutate în cloud, sub forma de Saas (Software as a Service), PaaS (Platform as a Service), IaaS (Infrastructure as a Service) sau arhitecturi Serverless. Aceste implementări distribuite introduc însă noi provocări în ceea ce privește observabilitatea sistemului. 
-Problematica monitorizării actuale provine din limitările arhitecturilor centralizate, care prezintă două riscuri majore:
+În contextul tehnologic actual, caracterizat prin expansiunea accelerată a paradigmei IoT (\textit{Internet of Things}), arhitecturile sistemelor distribuite au suferit transformări fundamentale. Odată cu migrarea masivă a serviciilor către infrastructuri de tip Cloud-native, fie sub formă de SaaS (\textit{Software as a Service}), PaaS sau arhitecturi Serverless, complexitatea operațională a crescut exponențial. Aceste medii dinamice impun cerințe stricte privind observabilitatea, monitorizarea și controlul în timp real al resurselor.
+
+Problematica monitorizării infrastructurilor moderne provine din limitările inherente ale arhitecturilor centralizate tradiționale. Deși eficiente la scară mică, sistemele bazate pe un coordonator unic care interoghează agenți pasivi devin rapid ineficiente în fața volumului de date generat de mii de containere sau microservicii efemere. Arhitecturile centralizate prezintă două vulnerabilități critice:
+
 \begin{itemize}
-    \item \textbf{Dependența de un punct unic (SPOF):} Monitorizarea ceea ce se folosește în prezent, unde sistemele sunt monitorizate de câtre un singur nod centralizat, care monitorizează toate sistemele prin intermediul unor agenți instalați pe fiecare nod din sistem. Serverul centralizat este singurul punct de monitorizare și control, care duce la "Single Point of Failure" (SPOF) al serverului, adică dacă serverul centralizat cade, sistemele râmân fără monitorizare.
-    \item \textbf{Limitări de scalabilitate:} Când nodurile încep să fie multe, monitorizarea centralizată devine ineficientă, deoarece poate duce la probleme de latență și scalabilitate. Posibile soluții:
+    \item \textbf{Dependența de un Punct Unic de Eșec (SPOF):} În modelul clasic, starea globală a sistemului este agregată de un singur nod central. Această centralizare creează un \textit{Single Point of Failure}. Indisponibilitatea serverului central, fie din cauze hardware, fie software, duce la pierderea totală a vizibilității asupra întregii infrastructuri, lăsând administratorii fără date critice exact în momentele de criză.
+    
+    \item \textbf{Limitări de Scalabilitate și Latență:} Pe măsură ce numărul de noduri monitorizate ($N$) crește, pe nodul central întâmplă un proces de \textit{bottleneck}. Procesarea secvențială sau concurentă a mii de cereri de stare duce la saturarea lățimii de bandă și a resurselor CPU. Soluțiile convenționale implică costuri ridicate:
     \begin{itemize}
-        \item \textit{Scalabilitate verticală:} Upgrade hardware costisitor al serverului de monitorizare.
-        \item \textit{Scalabilitate orizontală:} Adăugarea de proxy-uri, ceea ce crește complexitatea de configurare și mentenanță.
+        \item \textit{Scalabilitate verticală:} Upgrade-ul hardware al serverului central este o soluție temporară și extrem de costisitoare.
+        \item \textit{Scalabilitate orizontală:} Introducerea de proxy-uri sau sharding adaugă un nivel de complexitate în configurare și mentenanță care poate depăși beneficiile.
     \end{itemize}
 \end{itemize}
 
-De aceea, în acest referat se va prezenta un protocol de gossip de tip simetric push-pull, care permite sistemelor să comunice între ele prin strategia \textbf{Dynamic Average Consensus} \cite{spanos2005dynamic}.
+Această lucrare propune și analizează o soluție alternativă, robustă și descentralizată: utilizarea unui protocol de tip \textbf{Gossip} bazat pe strategia \textbf{Dynamic Average Consensus} \cite{spanos2005dynamic}. Prin adoptarea unui model de comunicare simetric \textit{Push-Pull}, se demonstrează posibilitatea monitorizării în timp real a stării globale a sistemului (ex. încărcarea medie a procesorului) fără a utiliza un coordonator central, eliminând astfel riscurile structurale ale abordărilor clasice.

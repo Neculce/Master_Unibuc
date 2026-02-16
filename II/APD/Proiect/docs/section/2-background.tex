@@ -1,45 +1,37 @@
-\section{Background}
+\section{Fundamente Teoretice}
 \label{sec:background}
 
 \subsection{Protocoale de tip Gossip}
-Protocoalele de tip Gossip (sau algoritmi epidemici) funcționează exact ca bârfa într-un grup social: informația se răspândește de la un om la altul, fără să existe un "șef" care să anunțe pe toată lumea. În termeni tehnici, nu avem un server central; fiecare nod își alege periodic un partener aleatoriu și fac schimb de date.
+Protocoalele de tip Gossip, modelează diseminarea informației într-un sistem distribuit similar modului în care se răspândește un zvon într-o rețea socială. Caracteristica definitorie a acestor protocoale este absența unei autorități centrale care să coordoneze comunicarea; în schimb, informația se propagă prin schimburi periodice între perechi de noduri.
 
-Conform lui Shah \cite{shah2009gossip}, ca să putem numi un algoritm "Gossip" eficient, trebuie să bifăm patru condiții: 
+Conform taxonomiei propuse de Shah \cite{shah2009gossip}, eficiența unui algoritm Gossip într-un mediu distribuit este condiționată de respectarea a patru principii fundamentale:
 \begin{itemize} 
-    \item \textbf{Localitate:} Un nod știe doar de vecinii lui direcți. Nu are nevoie de harta întregii rețele.
-    \item \textbf{Simplitate computațională și de stocare:} Ar fi ineficient ca un nod să descarce datele de la toate celelalte mii de noduri. Memoria și procesarea trebuie să rămână la un nivel minim.
-    \item \textbf{Asincronicitate:} Algoritmul este asincron. Nodurile nu trebuie să aibă ceasurile perfect aliniate sau să acționeze toate în aceeași milisecundă.
-    \item \textbf{Toleranță la erori:} Dacă un nod pică sau apare unul nou în timp ce rulăm algoritmul, rezultatul final nu trebuie să fie dat peste cap.
+    \item \textbf{Localitate Strictă:} Un nod deține informații exclusiv despre vecinii săi direcți din graful de rețea. Nu este necesară menținerea unei tabele globale de rutare sau cunoașterea topologiei complete a rețelei.
+    \item \textbf{Simplitate Computațională:} Algoritmul trebuie să implice operații aritmetice elementare și un consum minim de memorie, permițând rularea pe dispozitive cu resurse limitate. Interacțiunea nu trebuie să implice transferuri masive de date.
+    \item \textbf{Asincronicitate:} Sistemul nu presupune existența unui ceas global sau a unor runde de comunicare perfect sincronizate. Nodurile inițiază schimburi de date independent, bazându-se pe ceasuri locale.
+    \item \textbf{Toleranță la Erori (Fault Tolerance):} Algoritmul trebuie să fie robust la schimbări dinamice ale topologiei, cum ar fi defectarea nodurilor sau pierderea pachetelor, asigurând convergența rezultatului final fără intervenție externă.
 \end{itemize}
-Pe scurt, vrem să calculăm o valoare globală (cum ar fi media) prin interacțiuni simple și rapide între vecini.
 
 \subsection{Consensul Distribuit (Average Consensus)}
-Problema principală în sistemele distribuite este "consensul": cum facem ca toate nodurile să cadă de acord asupra unei valori? În proiectul de față, ne interesează "Average Consensus", adică toate nodurile să afle media aritmetică a valorilor din rețea. 
-
-Matematic, dacă fiecare nod $i$ pleacă de la o valoare $x_i(0)$, scopul e ca, după mai mulți pași de comunicare, toți să ajungă la aceeași valoare medie \cite{spanos2005dynamic}:
+Problema fundamentală abordată în această lucrare este \textit{Average Consensus}: convergența stării tuturor nodurilor către media aritmetică a valorilor inițiale din rețea. Fie $x_i(0)$ valoarea inițială a nodului $i$ (de exemplu, încărcarea CPU). Obiectivul este ca, printr-un proces iterativ, starea fiecărui nod $x_i(t)$ să satisfacă condiția \cite{spanos2005dynamic}:
 \[ \lim_{t \to \infty} x_i(t) = \frac{1}{n} \sum_{j=1}^{n} x_j(0) \]
 
 \subsection{Uniform Gossip și Conservarea Masei}
-Pentru a atinge acest consens, am folosit modelul \textbf{Uniform Gossip}, descris de Kempe et al. \cite{kempe2003gossip}. Ideea e simplă: la fiecare pas, un nod își alege un partener total aleatoriu (cu probabilitatea $1/n$). Asta asigură că informația se amestecă bine în toată rețeaua.
+Modelul utilizat, \textbf{Uniform Gossip} \cite{kempe2003gossip}, presupune că fiecare nod selectează un partener de comunicare cu o probabilitate uniformă $1/n$ (în cazul unei topologii complet conectate). Mecanismul de actualizare se bazează pe proprietatea de \textbf{Conservare a Masei}.
 
-Datorită proprietății de \textbf{Conservare a Masei} (Mass Conservation), suma totală a valorilor din sistem rămâne constantă, chiar dacă valorile individuale se schimbă. \cite{kempe2003gossip}
-
-Dacă nodul $i$ și nodul $j$ fac media valorilor lor:
+Atunci când două noduri, $i$ și $j$, interacționează la momentul $t$, ele își actualizează stările la media valorilor lor curente:
 \[ v_i(t+1) = v_j(t+1) = \frac{v_i(t) + v_j(t)}{2} \]
-...suma lor rămâne aceeași:
+Această operație asigură invarianța sumei globale:
 \[ v_i(t+1) + v_j(t+1) = v_i(t) + v_j(t) \]
-Practic, nu pierdem și nu inventăm informație, doar o redistribuim până se uniformizează totul.
+Astfel, informația nu este pierdută sau creată, ci doar redistribuită, conducând sistemul către o stare de echilibru (entropie maximă).
 
-\subsection{Dynamic Consensus și Delta Injection}
-În realitate, serverele nu sunt statice. Spre exemplu, încărcarea procesorului fluctuează continuu. Algoritmii clasici ar trebui restartați la fiecare mică schimbare, ceea ce e ineficient.
-Soluția este \textit{Dynamic Average Consensus}: în loc să suprascriem valoarea, lucrăm cu diferența (delta) dintre măsurătoarea nouă și cea veche. Asta ne permite să "injectăm" schimbarea în sistem din mers, fără să oprim comunicarea \cite{spanos2005dynamic}.
+\subsection{Dynamic Consensus}
+În scenarii reale, valorile monitorizate nu sunt statice. Deoarece reinițializarea algoritmului la fiecare fluctuație a senzorilor este impracticabilă, se utilizează \textit{Dynamic Average Consensus}. Nodurile monitorizează continuu valoarea locală și, în loc să suprascrie starea algoritmului, "injectează" diferența ($\Delta$) dintre noua măsurătoare și cea anterioară direct în procesul de mediere. Aceasta permite urmărirea în timp real a mediei globale variabile \cite{spanos2005dynamic}.
 
-\subsection{Topologii de comunicare}
-Viteza cu care se propagă informația depinde mult de cum sunt legate nodurile între ele (topologia):
+\subsection{Impactul Topologiei de Rețea}
+Performanța algoritmilor de consens este dictată de spectrul grafului de conexiuni:
 \begin{itemize} 
-    \item \textbf{Topologia Inel (Ring):} Nodurile sunt legate într-un cerc. E simplu de făcut (fiecare are 2 vecini), dar dacă se strică un nod, se rupe lanțul și informația nu mai circulă.
-    \item \textbf{Topologia Stea (Star):} Toate sunt legate la un nod central. E rapid, dar periculos: dacă pică centrul (Hub-ul), moare toată rețeaua. Asta contrazice ideea de sistem descentralizat.
-    \item \textbf{Topologia Completă (Mesh):} Oricine poate vorbi cu oricine. Este cea mai robustă variantă și asigură cel mai scurt drum pentru informație.
+    \item \textbf{Topologia Inel:} Fiecare nod are gradul $k=2$. Deși simplă, prezintă o vulnerabilitate majoră la partiționare și o viteză de convergență redusă $\bigO{N^2}$.
+    \item \textbf{Topologia Stea:} Centralizează comunicarea într-un Hub. Deși diametrul este mic, Hub-ul reintroduce problema SPOF și a congestiei, contrazicând principiile distribuite.
+    \item \textbf{Topologia Completă:} Permite comunicarea directă între oricare două noduri. Aceasta minimizează diametrul rețelei și maximizează viteza de amestecare, pentru că are convergență rapidă ($\bigO{\log N}$).
 \end{itemize}
-
-Trăgând linie, pentru un protocol Gossip, \textbf{topologia Mesh} este cea mai bună alegere: e rapidă și rezistă la defecțiuni. Topologia Star nu se potrivește pentru că introduce un punct unic de eșec (SPOF), iar Inelul este prea lent și vulnerabil (un nod defect blochează tot fluxul).

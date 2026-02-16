@@ -1,46 +1,207 @@
-\section{Analiză Teoretică și Discuții}
+\section{Analiză Experimentală și Rezultate}
 \label{sec:analysis}
 
-În această secțiune, analizăm performanța algoritmului distribuit propus (Push-Pull Dynamic Average Consensus) comparativ cu soluția serială, urmărind criteriile de eficiență, scalabilitate și impactul topologiei.
+Această secțiune prezintă analiza performanței algoritmului \textit{Push-Pull Dynamic Average Consensus}, bazată pe simulări efectuate pe clustere de dimensiuni variabile ($N \in \{20, 50, 100\}$). Au fost urmăriți doi parametri principali: viteza de convergență (timpul necesar stabilizării erorii) și robustețea în fața eșecurilor critice.
 
-\subsection{Complexitate Timp și Mesaje}
-Unul dintre avantajele majore ale algoritmilor Gossip este reducerea complexității temporale în rețelele mari.
+\subsection{Impactul Topologiei asupra Convergenței}
+Experimentele au confirmat că topologia rețelei subiacente este factorul dominant în determinarea timpului de amestecare.
 
+\textbf{1. Topologia Completă:}
+În scenariul complet, unde graful de conexiuni este complet, algoritmul a demonstrat performanțe superioare.
 \begin{itemize}
-    \item \textbf{Convergența:}
-    \begin{itemize}
-        \item \textbf{Algoritmul Serial:} Necesită $O(N)$ timp per ciclu, deoarece serverul central trebuie să proceseze secvențial $N$ mesaje. Timpul crește liniar cu numărul de noduri.
-        \item \textbf{Algoritmul Gossip:} Conform teoriei demonstrate de Kempe \cite{kempe2003gossip}, într-o topologie completă (sau random graph), timpul necesar pentru ca eroarea estimării să scadă la jumătate este de ordinul $O(\log N)$. Aceasta înseamnă o convergență exponențială: dacă dublăm numărul de noduri, timpul de convergență crește doar cu o valoare constantă mică.
-    \end{itemize}
+    \item \textbf{Rezultate:} Pentru un cluster de $N=50$ noduri, convergența erorii globale (diferența dintre maxim și minim) sub pragul de $0.01$ s-a realizat în aproximativ \textbf{5-7 secunde}.
+    \item \textbf{Interpretare:} Graficele de evoluție a erorii indică o scădere exponențială abruptă. Acest lucru validează teoria conform căreia timpul de convergență este de ordinul $\bigO{\log N}$.
+    \item \textbf{Trade-off:} Deși extrem de rapidă, această topologie implică un număr de conexiuni potențiale care crește pătratic ($\bigO{N^2}$), ceea ce poate ridica probleme de gestionare a socket-urilor în rețele extrem de mari.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_MESH_10.png}
+        \caption{$N=10$}
+        \label{fig:mesh10}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_MESH_50.png}
+        \caption{$N=20$}
+        \label{fig:mesh50}
+    \end{subfigure}
     
-    \item \textbf{Mesaje:}
-    \begin{itemize}
-        \item În abordarea \textbf{Serială}, serverul central gestionează $2N$ mesaje pe ciclu (Request + Reply pentru fiecare nod), ceea ce duce la congestie.
-        \item În abordarea \textbf{Gossip}, fiecare nod trimite un număr constant de mesaje per unitatea de timp (de obicei 1 mesaj către 1 vecin). Deși numărul total de mesaje în rețea este $O(N)$, acestea sunt distribuite uniform pe toate link-urile, evitând gâtuirea rețelei.
-    \end{itemize}
-\end{itemize}
+    \vspace{0.5cm}
+    
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_MESH_100.png}
+        \caption{$N=50$}
+        \label{fig:mesh100}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_MESH_1000.png}
+        \caption{$N=100$}
+        \label{fig:mesh1000}
+    \end{subfigure}
+    
+    \caption{Analiza comparativă a convergenței în Topologia Completă la variația numărului de noduri ($N$). Se observă că în topologia aceasta, la creșterea numărului de noduri, timpul rămâne același sau crește subit.}
+    \label{fig:mesh_analysis}
+\end{figure}
 
-\subsection{Speedup și Eficiență}
-Accelerația (Speedup) măsoară cât de mult câștigăm prin paralelizare. Deoarece algoritmul Gossip rulează simultan pe toate cele $N$ noduri (model SPMD), capacitatea totală de procesare a sistemului crește odată cu dimensiunea rețelei.
-
+\textbf{2. Topologia Inel:}
+Scenariul inel reprezintă cazul extrem de localitate, unde diametrul rețelei este maxim ($N/2$).
 \begin{itemize}
-    \item \textbf{Utilizarea Resurselor:} Spre deosebire de modelul Client-Server unde serverul stă la 100\% CPU iar clienții la 1\% (așteptând), în Gossip efortul este partajat egal. Eficiența este maximă deoarece nu există timpi morți cauzați de așteptarea la coadă la un coordonator central.
-    \item \textbf{Reducerea Erorii:} Eficiența algoritmului este vizibilă în viteza cu care media estimată se apropie de media reală. În testele efectuate, eroarea scade cu un factor constant la fiecare rundă de comunicare ($e^{-t}$), fenomen numit "convergență geometrică".
+    \item \textbf{Rezultate:} La aceeași dimensiune $N=50$, timpul de convergență a crescut mult, depășind frecvent \textbf{100 de secunde}.
+    \item \textbf{Interpretare:} Graficele prezintă o "coadă lungă", indicând o difuzie lentă. Informația trebuie să parcurgă fizic tot lanțul de noduri pentru a echilibra valorile extreme. Performanța scalează polinomial cu $\bigO{N^2}$, făcând Inelul inadecvat pentru sisteme sensibile la latență, în ciuda costului redus de conectare.
 \end{itemize}
 
-\subsection{Avantaje și Dezavantaje la Variația Numărului de Noduri}
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_RING_10.png}
+        \caption{$N=10$}
+        \label{fig:ring10}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_RING_20.png}
+        \caption{$N=20$}
+        \label{fig:ring20}
+    \end{subfigure}
+    
+    \vspace{0.5cm}
+    
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_RING_50.png}
+        \caption{$N=50$}
+        \label{fig:ring50}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_RING_100.png}
+        \caption{$N=100$}
+        \label{fig:ring100}
+    \end{subfigure}
+    
+    \caption{Analiza comparativă a convergenței în Topologia Inel la variația numărului de noduri ($N$). Se observă creșterea exponențială a timpului necesar stabilizării.}
+    \label{fig:ring_analysis}
+\end{figure}
 
-\subsection{Particularizare pe Topologii}
-Performanța algoritmului este dictată strict de structura grafului de conexiuni ($G=(V,E)$). În cadrul proiectului, am analizat două cazuri extreme:
+\vspace{0.5cm}
+\noindent\rule{\linewidth}{0.4pt}
+\noindent \textbf{Analiza Temporală a Vulnerabilității (Studiu de Caz $N=10$):}
 
-\textbf{1. Topologia Inel (Ring):}
+Un fenomen particular observat în topologia Inel, cauzat de viteza redusă de difuzie, este \textit{vulnerabilitatea temporală}. Deoarece informația se propagă lent între vecini, un nod cu valoare ridicată ("nod bogat") tinde să rețină o mare parte din "masa" totală a sistemului pentru o perioadă mai lungă de timp comparativ cu topologia Mesh.
+
+Am analizat impactul momentului eșecului ($t_{fail}$) asupra mediei globale, într-un cluster mic de $N=10$ noduri, eliminând cel mai bogat nod în două scenarii distincte:
+
+\begin{enumerate}
+    \item \textbf{Eșec Prematur ($t_{fail} = 1s$):} Nodul dominant este eliminat înainte de a apuca să distribuie valoarea sa vecinilor. 
+    \item \textbf{Eșec Tardiv ($t_{fail} = 5s$):} Nodul este eliminat după ce a efectuat mai multe runde de \textit{gossip}.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_RING_10_bogat.png}
+        \caption{Eșec la $t=1s$}
+        \label{fig:kill_early}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_RING_10_sarac.png}
+        \caption{Eșec la $t=5s$}
+        \label{fig:kill_late}
+    \end{subfigure}
+    
+    \caption{Impactul momentului eșecului asupra mediei globale în Topologia Inel ($N=10$). În stânga (a), pierderea este masivă deoarece nodul nu a apucat să disemineze valoarea. În dreapta (b), sistemul este robust deoarece valoarea a fost deja transferată vecinilor.}
+    \label{fig:time_vulnerability}
+\end{figure}
+
+\textbf{Interpretare:}
+Așa cum se observă în Figura \ref{fig:kill_early}, eliminarea nodului la $t=1s$ provoacă o prăbușire a mediei rețelei (Mass Loss sever), deoarece "masa" era concentrată în nodul defect. În schimb, în Figura \ref{fig:kill_late}, deși nodul este eliminat, media rămâne stabilă. Acest lucru demonstrează că, pe măsură ce timpul trece, sistemul devine mai robust: valoarea este transferată de la nodul bogat către vecini, iar dispariția sursei inițiale devine irelevantă matematic.
+
+\vspace{0.5cm}
+\noindent\rule{\linewidth}{0.4pt}
+\vspace{0.5cm}
+
+\textbf{3. Topologia Stea:}
 \begin{itemize}
-    \item \textit{Descriere:} Fiecare nod comunică doar cu vecinii stânga/dreapta ($grad=2$).
-    \item \textit{Performanță:} Slabă. Convergența este lentă, de ordinul $O(N^2)$. Informația trebuie să parcurgă fizic tot lanțul pentru a ajunge de la un capăt la altul.
+    \item \textbf{Rezultate:} Pentru $N$ mic ($N \le 20$), convergența este rapidă. Totuși, la $N=100$, am observat o degradare a performanței cauzată de timpii de așteptare la nivelul Hub-ului central.
+    \item \textbf{Concluzie:} Deși Hub-ul facilitează un diametru mic al grafului, limitările secvențiale de procesare ale nodului central anulează beneficiile paralelizării Gossip.
 \end{itemize}
 
-\textbf{2. Topologia Completă (Mesh):}
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_STAR_10.png}
+        \caption{$N=10$}
+        \label{fig:star10}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_STAR_50.png}
+        \caption{$N=20$}
+        \label{fig:star50}
+    \end{subfigure}
+    
+    \vspace{0.5cm}
+    
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_STAR_100.png}
+        \caption{$N=50$}
+        \label{fig:star100}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{./assets/grafic_STAR_1000.png}
+        \caption{$N=100$}
+        \label{fig:star1000}
+    \end{subfigure}
+    
+    \caption{Analiza comparativă a convergenței în Topologia stea la variația numărului de noduri ($N$).}
+    \label{fig:star_analysis}
+\end{figure}
+
+\subsection{Validarea Matematică a Fenomenului "Mass Loss"}
+Pentru a confirma corectitudinea algoritmului în scenariile de eșec, am comparat media finală obținută experimental cu media teoretică recalculată după pierderea unui nod. 
+
+Formula de recalculare a mediei după eliminarea nodului $k$ cu valoarea $v_k$ din sistemul cu suma totală $S_{total}$ este:
+\begin{equation}
+    \mu_{new} = \frac{S_{total} - v_k}{N - 1}
+\end{equation}
+
+Analizăm două cazuri extrase din testele pe topologia Inel ($N=10$, $S_{total}=1000$):
+\vspace{0.5em}
+
+\textbf{Cazul 1: Eșec în fază inițială}
 \begin{itemize}
-    \item \textit{Descriere:} Orice nod poate contacta orice alt nod.
-    \item \textit{Performanță:} Excelentă. Convergența este de ordinul $O(\log N)$. Diametrul mic al grafului permite informației să se propage "viral" în câțiva pași.
+    \item \textbf{Date:} Nodul 5003 a fost eliminat la $t=0.6s$ având valoarea $v_k = 124.73$ (mult peste media inițială de 100).
+    \item \textbf{Calcul Teoretic:}
+    \[ \mu_{th} = \frac{1000 - 124.73}{9} = \frac{875.27}{9} \approx \mathbf{97.252} \]
+    \item \textbf{Rezultat Experimental:} $\mu_{exp} = \mathbf{97.262}$
+    \item \textbf{Concluzie:} Aceasta confirmă că rețeaua a converjat corect la noua realitate matematică, deși media a scăzut.
 \end{itemize}
+
+\textbf{Cazul 2: Eșec în fază de echilibru}
+\begin{itemize}
+    \item \textbf{Date:} Nodul 5005 a fost eliminat la $t=4.6s$ având valoarea $v_k = 100.14$ (aproape egală cu media).
+    \item \textbf{Calcul Teoretic:}
+    \[ \mu_{th} = \frac{1000 - 100.14}{9} = \frac{899.86}{9} \approx \mathbf{99.984} \]
+    \item \textbf{Rezultat Experimental:} $\mu_{exp} = \mathbf{99.983}$
+    \item \textbf{Concluzie:} Deoarece valoarea pierdută a fost aproape identică cu media sistemului, impactul asupra consensului global a fost neglijabil, demonstrând stabilitatea algoritmului în timp.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Generalizare:}
+Principiul recalculării mediei este \textbf{universal valabil}, indiferent de topologie. Studiul de caz a utilizat Inelul deoarece difuzia lentă ($O(N^2)$) extinde fereastra de vulnerabilitate, facilitând observarea fenomenului "Mass Loss". În contrast, mixarea rapidă din Mesh ($O(\log N)$) disipează instantaneu acumulările locale de valoare, transformând astfel Inelul în scenariul \textit{worst-case} ideal pentru validarea robusteței.
+
+\vspace{0.5em}
+Acest comportament demonstrează capacitatea de \textit{self-healing} a protocolului: rețeaua absoarbe șocul pierderii de date și redistribuie eroarea rămasă între nodurile supraviețuitoare, ajungând la un nou consens valid matematic pentru starea curentă a sistemului.
+\subsection{Scalabilitate}
+Testele comparative între $N=20$ și $N=100$ au evidențiat proprietățile de scalare:
+\begin{itemize}
+    \item \textbf{Linearitate vs. Logaritmicitate:} În topologia Mesh, dublarea numărului de noduri a adăugat doar un cost marginal de timp, confirmând scalabilitatea logaritmică. În schimb, în Ring, dublarea nodurilor a cvadruplat timpul de așteptare.
+    \item \textbf{Utilizarea Resurselor:} Spre deosebire de algoritmul serial unde serverul ajunge la 100\% CPU, în varianta distribuită efortul computațional a rămas constant per nod, indiferent de mărimea rețelei.
+\end{itemize}
+
+\subsection{Robustețe și Analiza "Mass Loss"}
+Un set distinct de experimente a vizat comportamentul sistemului la eliminarea forțată a nodurilor, folosind o distribuție inițială inegală a valorilor.

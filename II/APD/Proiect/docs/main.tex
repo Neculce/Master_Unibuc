@@ -2,7 +2,6 @@
 
 \usepackage{fontspec}
 \usepackage{polyglossia}
-
 \setdefaultlanguage{romanian}
 \setotherlanguages{english}
 \SetLanguageKeys{romanian}{indentfirst=true}
@@ -25,6 +24,9 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{enumitem}
+
+\usepackage{caption}
+\usepackage{subcaption}
 
 \usepackage{amsmath}
 \usepackage{mathtools}
@@ -107,13 +109,12 @@
 }
 \makeatother
 
-\title{\textbf{Monitorizare Distribuită în Timp Real prin Protocolul Gossip}\\
+\title{\textbf{Monitorizare Distribuită prin Protocolul Gossip}\\
 \large Analiză și Implementare a Protocolului Simetric Push-Pull}
 
 \author{
     \href{https://www.linkedin.com/in/andrei-murariu-83317b177/}{\textbf{Murariu Andrei-Stefanel}} \\
     \textit{Facultatea de Matematică și Informatică, Universitatea din București} \\
-    \textit{București, România} \\
     \texttt{andrei-stefanel.murariu@s.unibuc.ro}
 }
 \date{\today}
@@ -123,15 +124,17 @@
 \twocolumn[
   \begin{@twocolumnfalse}
     \maketitle
+    \begin{abstract}
+        Această lucrare analizează eficiența protocoalelor de tip Gossip pentru monitorizarea sistemelor distribuite la scară largă, propunând o alternativă descentralizată la arhitecturile clasice Client-Server. Se investighează algoritmul \textit{Push-Pull Dynamic Average Consensus}, evaluând performanța acestuia pe diverse topologii de rețea (Mesh, Ring, Star). Rezultatele experimentale demonstrează că abordarea distribuită elimină punctul unic de eșec (SPOF) și oferă o scalabilitate superioară. De asemenea, lucrarea tratează fenomenul de \textit{Mass Loss} în scenarii de eșec al nodurilor și impactul distribuției inegale a valorilor asupra timpului de convergență.
+    \end{abstract}
+    \vspace{1em}
   \end{@twocolumnfalse}
 ]
-
-\input{section/0-abstract.tex}
 \input{section/1-intro.tex}
 \input{section/2-background.tex}
 \input{section/3-algorithms.tex}
 \input{section/4-analysis.tex}
+\input{section/5-conlusions.tex} 
 \printbibliography[heading=bibintoc]
-
 
 \end{document}

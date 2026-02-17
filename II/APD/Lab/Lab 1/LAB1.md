@@ -1,12 +1,5 @@
 # Lab 1 - Algoritmi Paraleli și Distribuiți
 
-Buna seara domnule profesor, stiu ca am trecut de deadline :)
-Imi cer scuze, am incercat si eu sa fac ce am putut, am fost aglomerat cu lucrul saptamanile astea.
-
-Cu stima,
-Murariu Andrei
-BDTS
-
 ## Test mpi4py
 
 Am instalat (prin virtual environment pe mac) și testat pachetul `mpi4py` pentru Python. Testul demonstrează:

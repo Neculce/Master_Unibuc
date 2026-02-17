@@ -13,12 +13,11 @@ def main():
     
     safe_print(f"Procesul {rank}: inițializat pe inel, total {size} noduri")
     
-    # Root generează A și x cu numere întregi
     if rank == 0:
         size = 4
-        n = size  # dimensiune matrice A (n×n) și vector x
-        A = np.random.randint(1, 10, (n, n))  # Numere întregi 1-9
-        x = np.random.randint(1, 10, n)  # Numere întregi 1-9
+        n = size
+        A = np.random.randint(1, 10, (n, n))
+        x = np.random.randint(1, 10, n) 
         safe_print(f"\nProcesul {rank}: matricea A {n}x{n}")
         safe_print(f"A =\n{A}")
         safe_print(f"Procesul {rank}: vectorul x = {x}")
@@ -28,15 +27,12 @@ def main():
         x = None
         n = None
     
-    # broadcast dimensiunea
     n = comm.bcast(n, root=0)
     
-    # distribuție echilibrată: nodul i primește coloana i și componenta i
-    my_column_A = np.empty(n, dtype='i')  # Integer
-    my_component_x = np.empty(1, dtype='i')  # Integer
+    my_column_A = np.empty(n, dtype='i') 
+    my_component_x = np.empty(1, dtype='i') 
     
     if rank == 0:
-        # Root își păstrează coloana 0 și componenta 0
         my_column_A = np.array(A[:, 0], dtype='i', copy=True)
         my_component_x = np.array([x[0]], dtype='i')
         
@@ -47,16 +43,12 @@ def main():
             column_data = np.array(A[:, i], dtype='i', copy=True)
             component_data = np.array([x[i]], dtype='i')
             
-            # trimite coloana i catre nodul i
             comm.Send([column_data, MPI.INT], dest=i, tag=0)
-            # trimite componenta x[i] catre nodul i
             comm.Send([component_data, MPI.INT], dest=i, tag=1)
             
             safe_print(f"Procesul {rank}: am trimis coloana[{i}] și x[{i}] către nodul {i}")
     else:
-        # primeste coloana rank
         comm.Recv([my_column_A, MPI.INT], source=0, tag=0)
-        # primeste componenta x[rank]
         comm.Recv([my_component_x, MPI.INT], source=0, tag=1)
         safe_print(f"Procesul {rank}: am primit coloana[{rank}] = {my_column_A}")
         safe_print(f"Procesul {rank}: am primit x[{rank}] = {my_component_x[0]}")

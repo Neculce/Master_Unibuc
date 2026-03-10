@@ -17,6 +17,7 @@
     maxbibnames=50,
     sorting=nty
 ]{biblatex}
+\addbibresource{bibliography.bib}
 
 \usepackage{setspace}
 \onehalfspacing
@@ -83,7 +84,7 @@
 \usepackage{enumitem}
 \usepackage{subcaption}
 
-\title{Gattaca}
+\title{Assignments}
 \author{Murariu Andrei Stefanel}
 
 \makeatletter
@@ -113,5 +114,8 @@
 \let\ps@plain\ps@main
 
 \include{1-gattaca}
+\include{2-ribosome}
+
+\printbibliography[heading=bibintoc]
 
 \end{document}

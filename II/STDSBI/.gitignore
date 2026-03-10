@@ -4,8 +4,11 @@
 *.toc
 *.fls
 *.pdf
+*.bbl
 *.fdb_latexmk
 *.synctex.gz
 *.synctex(busy).gz
 *.synctex.gz(busy)
 *.synctex(busy).gz(busy)
+
+.DS_Store

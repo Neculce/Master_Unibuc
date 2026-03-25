@@ -6,6 +6,10 @@
 *.pdf
 *.bbl
 *.fdb_latexmk
+*.xdv
+*.blg
+*.nav
+*.snm
 *.synctex.gz
 *.synctex(busy).gz
 *.synctex.gz(busy)

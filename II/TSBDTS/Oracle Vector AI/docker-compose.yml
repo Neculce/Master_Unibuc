@@ -1,0 +1,22 @@
+services:
+  db:
+    image: container-registry.oracle.com/database/free:latest
+    container_name: oracle-movie
+    ports:
+      - "1522:1521"
+    environment:
+      - ORACLE_PWD=${ORACLE_PWD:-MyPass123}
+
+  app:
+    build: .
+    container_name: flask-movie-app
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "${FLASK_PORT:-5005}:${FLASK_PORT:-5005}"
+    environment:
+      - ORACLE_DSN=db:1521/FREEPDB1
+      - FLASK_HOST=0.0.0.0
+      - FLASK_DEBUG=${FLASK_DEBUG:-False}

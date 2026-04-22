@@ -228,8 +228,8 @@ def generate_and_store_embeddings():
 
 ## 10. Echipă
 
-| Membru | Contribuție |
-|--------|-------------|
-| Membru 1 | Backend, interogări SQL, Vector Search |
-| Membru 2 | Frontend, integrare Flask, UI |
-| Membru 3 | Embeddings, dataset, documentație |
+| Membru                  | Contribuție |
+|-------------------------|-------------|
+| Murariu Andrei-Stefanel | Backend, interogări SQL, Vector Search |
+| Gheorghe Briana         | Frontend, integrare Flask, UI |
+| Mindruta Andrei         | Embeddings, dataset, documentație |

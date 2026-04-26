@@ -1,0 +1,18 @@
+.env
+oradata/
+# scripts/
+
+# TeX compilation files
+docs/analysis/*.aux
+docs/analysis/*.log
+docs/analysis/*.out
+docs/analysis/*.toc
+docs/analysis/*.fls
+docs/analysis/*.pdf
+docs/analysis/*.fdb_latexmk
+docs/analysis/*.synctex.gz
+docs/analysis/*.synctex(busy).gz
+docs/analysis/*.synctex.gz(busy)
+docs/analysis/*.synctex(busy).gz(busy)
+
+.dwbi_venv/

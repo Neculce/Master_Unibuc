@@ -1,25 +1,27 @@
 services:
-  oracle-db-1:
+  oracle-db-sv1:
     image: container-registry.oracle.com/database/enterprise:19.3.0.0
-    container_name: tickly
+    container_name: oracle-sv1
+    profiles:
+      - sv1
     restart: unless-stopped
     ports:
-      - "1515:1521"
-      - "1516:5500"
+      - "1521:1521"
+      - "5500:5500"
     environment:
-      ORACLE_SID: "DB1"
-      ORACLE_PDB: "PDB1"
-      ORACLE_PWD: "07072022"
+      ORACLE_SID: "${ORACLE_SID:-DB1}"
+      ORACLE_PDB: "${ORACLE_PDB:-PDB1}"
+      ORACLE_PWD: "${ORACLE_PWD}"
       ORACLE_EDITION: enterprise
       ORACLE_CHARACTERSET: "AL32UTF8"
       ENABLE_ARCHIVELOG: "true"
       INIT_SGA_SIZE: "2048"
       INIT_PGA_SIZE: "1024"
     volumes:
-      - ./oradata1:/opt/oracle/oradata:rw
-      - ./scripts/startup:/opt/oracle/scripts/startup:rw
-      - ./scripts/setup:/opt/oracle/scripts/setup:rw
-      - ./scripts/etl:/opt/oracle/scripts/etl:ro
+      - ./sv1/oradata:/opt/oracle/oradata:rw
+      - ./sv1/scripts/startup:/opt/oracle/scripts/startup:rw
+      - ./sv1/scripts/setup:/opt/oracle/scripts/setup:rw
+      - ./sv1/scripts/etl:/opt/oracle/scripts/etl:ro
     shm_size: "2g"
     ulimits:
       nofile:
@@ -36,30 +38,31 @@ services:
         max-size: "50m"
         max-file: "3"
     networks:
-      dwbi-net:
-        ipv4_address: 172.20.0.10
+      - modbd-net
 
-  oracle-db-2:
+  oracle-db-sv2:
     image: container-registry.oracle.com/database/enterprise:19.3.0.0
-    container_name: tickly_
+    container_name: oracle-sv2
+    profiles:
+      - sv2
     restart: unless-stopped
     ports:
-      - "1525:1521"
-      - "1526:5500"
+      - "1521:1521"
+      - "5500:5500"
     environment:
-      ORACLE_SID: "DB2"
-      ORACLE_PDB: "PDB2"
-      ORACLE_PWD: "07072022"
+      ORACLE_SID: "${ORACLE_SID:-DB2}"
+      ORACLE_PDB: "${ORACLE_PDB:-PDB2}"
+      ORACLE_PWD: "${ORACLE_PWD}"
       ORACLE_EDITION: enterprise
       ORACLE_CHARACTERSET: "AL32UTF8"
       ENABLE_ARCHIVELOG: "true"
       INIT_SGA_SIZE: "2048"
       INIT_PGA_SIZE: "1024"
     volumes:
-      - ./oradata2:/opt/oracle/oradata:rw
-      - ./scripts/startup2:/opt/oracle/scripts/startup:rw
-      - ./scripts/setup2:/opt/oracle/scripts/setup:rw
-      - ./scripts/etl2:/opt/oracle/scripts/etl:ro
+      - ./sv2/oradata:/opt/oracle/oradata:rw
+      - ./sv2/scripts/startup:/opt/oracle/scripts/startup:rw
+      - ./sv2/scripts/setup:/opt/oracle/scripts/setup:rw
+      - ./sv2/scripts/etl:/opt/oracle/scripts/etl:ro
     shm_size: "2g"
     ulimits:
       nofile:
@@ -76,12 +79,90 @@ services:
         max-size: "50m"
         max-file: "3"
     networks:
-      dwbi-net:
-        ipv4_address: 172.20.0.20
+      - modbd-net
+  
+  oracle-db-sv3:
+    image: container-registry.oracle.com/database/enterprise:19.3.0.0
+    container_name: oracle-sv3
+    profiles:
+      - sv3
+    restart: unless-stopped
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      ORACLE_SID: "${ORACLE_SID:-DB3}"
+      ORACLE_PDB: "${ORACLE_PDB:-PDB3}"
+      ORACLE_PWD: "${ORACLE_PWD}"
+      ORACLE_EDITION: enterprise
+      ORACLE_CHARACTERSET: "AL32UTF8"
+      ENABLE_ARCHIVELOG: "true"
+      INIT_SGA_SIZE: "2048"
+      INIT_PGA_SIZE: "1024"
+    volumes:
+      - ./sv3/oradata:/opt/oracle/oradata:rw
+      - ./sv3/scripts/startup:/opt/oracle/scripts/startup:rw
+      - ./sv3/scripts/setup:/opt/oracle/scripts/setup:rw
+      - ./sv3/scripts/etl:/opt/oracle/scripts/etl:ro
+    shm_size: "2g"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc: 16384
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - modbd-net
+  
+  oracle-db-sv4:
+    image: container-registry.oracle.com/database/enterprise:19.3.0.0
+    container_name: oracle-sv4
+    profiles:
+      - sv4
+    restart: unless-stopped
+    ports:
+      - "1522:1521"
+      - "5501:5500"
+    environment:
+      ORACLE_SID: "${ORACLE_SID:-DB4}"
+      ORACLE_PDB: "${ORACLE_PDB:-PDB4}"
+      ORACLE_PWD: "${ORACLE_PWD}"
+      ORACLE_EDITION: enterprise
+      ORACLE_CHARACTERSET: "AL32UTF8"
+      ENABLE_ARCHIVELOG: "true"
+      INIT_SGA_SIZE: "2048"
+      INIT_PGA_SIZE: "1024"
+    volumes:
+      - ./sv4/oradata:/opt/oracle/oradata:rw
+      - ./sv4/scripts/startup:/opt/oracle/scripts/startup:rw
+      - ./sv4/scripts/setup:/opt/oracle/scripts/setup:rw
+      - ./sv4/scripts/etl:/opt/oracle/scripts/etl:ro
+    shm_size: "2g"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc: 16384
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - modbd-net
 
 networks:
-  dwbi-net:
+  modbd-net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

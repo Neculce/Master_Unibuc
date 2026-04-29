@@ -1,4 +1,4 @@
-name: Build DW&BI Docs
+name: Build MODBD Docs
 
 on:
   push:
@@ -41,6 +41,6 @@ jobs:
           cp II/MODBD/docs/analysis/main.pdf II/MODBD/docs/analysis/MODBD_Project.pdf
           gh release delete modbd-docs-latest --yes 2>/dev/null || true
           gh release create modbd-docs-latest \
-            --title "DW&BI Project (latest)" \
+            --title "MODBD Project (latest)" \
             --notes "Built from ${{ github.ref_name }} at ${{ github.sha }}." \
             II/MODBD/docs/analysis/MODBD_Project.pdf

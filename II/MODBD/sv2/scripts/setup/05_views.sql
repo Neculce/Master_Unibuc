@@ -1,4 +1,4 @@
-ALTER SESSION SET CONTAINER = PDB1;
+ALTER SESSION SET CONTAINER = PDB2;
 
 CREATE OR REPLACE VIEW TickLy.v_agent_global AS
 SELECT 
@@ -8,6 +8,8 @@ FROM TickLy.agent_profil p
 JOIN TickLy.agent_sec@link_sv3 s ON p.agent_id = s.agent_id;
 
 CREATE OR REPLACE FORCE VIEW TickLy.v_toate_tichetele AS
-SELECT ticket_id, client_id, 'FIZIC' AS tip, titlu, data_creare FROM TickLy.ticket_fizic
+SELECT ticket_id, client_id, 'JURIDIC' AS tip, titlu, data_creare 
+FROM TickLy.ticket_juridic
 UNION ALL
-SELECT ticket_id, client_id, 'JURIDIC' AS tip, titlu, data_creare FROM TickLy.ticket_juridic@link_sv2;
+SELECT ticket_id, client_id, 'FIZIC' AS tip, titlu, data_creare 
+FROM TickLy.ticket_fizic@link_sv1;

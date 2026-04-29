@@ -52,10 +52,37 @@ CREATE TABLE TickLy.kb_article (
     CONSTRAINT fk_kb_categorie FOREIGN KEY (categorie_id) REFERENCES TickLy.categorie(categorie_id)
 );
 
+CREATE TABLE TickLy.departament (
+    departament_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nume VARCHAR2(100) NOT NULL UNIQUE,
+    descriere VARCHAR2(500),
+    manager_id NUMBER NOT NULL
+);
+
+CREATE TABLE TickLy.topic_serviciu (
+    topic_id NUMBER PRIMARY KEY,
+    tip_serviciu VARCHAR2(50) NOT NULL,
+    durata_estimata NUMBER,
+    tarif NUMBER(10,2),
+    CONSTRAINT fk_topic_serviciu FOREIGN KEY (topic_id) REFERENCES TickLy.topic(topic_id) ON DELETE CASCADE
+);
+
+CREATE TABLE TickLy.topic_produs (
+    topic_id NUMBER PRIMARY KEY,
+    versiune VARCHAR2(20),
+    categorie VARCHAR2(50),
+    pret NUMBER(10,2),
+    stoc NUMBER,
+    CONSTRAINT fk_topic_produs FOREIGN KEY (topic_id) REFERENCES TickLy.topic(topic_id) ON DELETE CASCADE
+);
+
 CREATE MATERIALIZED VIEW LOG ON TickLy.prioritate WITH PRIMARY KEY;
 CREATE MATERIALIZED VIEW LOG ON TickLy.status WITH PRIMARY KEY;
 CREATE MATERIALIZED VIEW LOG ON TickLy.categorie WITH PRIMARY KEY;
 CREATE MATERIALIZED VIEW LOG ON TickLy.tag WITH PRIMARY KEY;
 CREATE MATERIALIZED VIEW LOG ON TickLy.topic WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TickLy.departament WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TickLy.topic_serviciu WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TickLy.topic_produs WITH PRIMARY KEY;
 
 COMMIT;

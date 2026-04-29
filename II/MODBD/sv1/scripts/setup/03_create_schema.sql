@@ -6,6 +6,9 @@ CREATE MATERIALIZED VIEW TickLy.status REFRESH FAST ON DEMAND WITH PRIMARY KEY A
 CREATE MATERIALIZED VIEW TickLy.categorie REFRESH FAST ON DEMAND WITH PRIMARY KEY AS SELECT * FROM TickLy.categorie@link_sv4;
 CREATE MATERIALIZED VIEW TickLy.tag REFRESH FAST ON DEMAND WITH PRIMARY KEY AS SELECT * FROM TickLy.tag@link_sv4;
 CREATE MATERIALIZED VIEW TickLy.topic REFRESH FAST ON DEMAND WITH PRIMARY KEY AS SELECT * FROM TickLy.topic@link_sv4;
+CREATE MATERIALIZED VIEW TickLy.departament REFRESH FAST ON DEMAND WITH PRIMARY KEY AS SELECT * FROM TickLy.departament@link_sv4;
+CREATE MATERIALIZED VIEW TickLy.topic_serviciu REFRESH FAST ON DEMAND WITH PRIMARY KEY AS SELECT * FROM TickLy.topic_serviciu@link_sv4;
+CREATE MATERIALIZED VIEW TickLy.topic_produs REFRESH FAST ON DEMAND WITH PRIMARY KEY AS SELECT * FROM TickLy.topic_produs@link_sv4;
 
 CREATE TABLE TickLy.agent_profil (
     agent_id NUMBER PRIMARY KEY,
@@ -55,6 +58,83 @@ CREATE TABLE TickLy.ticket_tag_fizic (
     tag_id NUMBER NOT NULL,
     CONSTRAINT pk_ttf PRIMARY KEY (ticket_id, tag_id),
     CONSTRAINT fk_ttf_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket_fizic(ticket_id) ON DELETE CASCADE
+);
+
+CREATE TABLE TickLy.adresa_fizic (
+    adresa_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    client_id NUMBER NOT NULL,
+    tip_adresa VARCHAR2(20) CHECK (tip_adresa IN ('FACTURARE', 'LIVRARE', 'SEDIU')),
+    strada VARCHAR2(100) NOT NULL,
+    numar VARCHAR2(10),
+    oras VARCHAR2(50) NOT NULL,
+    judet VARCHAR2(50),
+    cod_postal VARCHAR2(10),
+    tara VARCHAR2(50) DEFAULT 'Romania',
+    este_principala CHAR(1) DEFAULT 'N' CHECK (este_principala IN ('Y', 'N')),
+    CONSTRAINT fk_adresa_client_f FOREIGN KEY (client_id) REFERENCES TickLy.client_fizic(client_id) ON DELETE CASCADE
+);
+
+CREATE TABLE TickLy.comment_agent_fizic (
+    comment_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ticket_id NUMBER NOT NULL,
+    agent_id NUMBER NOT NULL,
+    content CLOB NOT NULL,
+    created_date DATE DEFAULT SYSDATE NOT NULL,
+    is_internal CHAR(1) DEFAULT 'N' CHECK (is_internal IN ('Y', 'N')),
+    CONSTRAINT fk_caf_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket_fizic(ticket_id) ON DELETE CASCADE,
+    CONSTRAINT fk_caf_agent FOREIGN KEY (agent_id) REFERENCES TickLy.agent_profil(agent_id) ON DELETE CASCADE
+);
+
+CREATE TABLE TickLy.ticket_history_fizic (
+    history_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ticket_id NUMBER NOT NULL,
+    event_type VARCHAR2(50) NOT NULL,
+    created_date DATE DEFAULT SYSDATE NOT NULL,
+    created_by_role VARCHAR2(10) NOT NULL,
+    created_by_id NUMBER NOT NULL,
+    author_name VARCHAR2(200),
+    display_text VARCHAR2(500),
+    CONSTRAINT fk_thf_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket_fizic(ticket_id) ON DELETE CASCADE
+);
+
+CREATE TABLE TickLy.feedback_fizic (
+    feedback_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ticket_id NUMBER NOT NULL UNIQUE,
+    rating NUMBER(1) CHECK (rating BETWEEN 1 AND 5),
+    comentariu VARCHAR2(1000),
+    data_feedback DATE DEFAULT SYSDATE NOT NULL,
+    CONSTRAINT fk_ff_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket_fizic(ticket_id) ON DELETE CASCADE
+);
+
+CREATE TABLE TickLy.solutie_fizic (
+    solutie_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ticket_id NUMBER NOT NULL UNIQUE,
+    agent_id NUMBER NOT NULL,
+    descriere_solutie CLOB NOT NULL,
+    pasi_rezolvare CLOB,
+    data_rezolvare DATE DEFAULT SYSDATE NOT NULL,
+    timp_rezolvare_minute NUMBER,
+    CONSTRAINT fk_sf_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket_fizic(ticket_id) ON DELETE CASCADE,
+    CONSTRAINT fk_sf_agent FOREIGN KEY (agent_id) REFERENCES TickLy.agent_profil(agent_id)
+);
+
+CREATE TABLE TickLy.ticket_agent_fizic (
+    ticket_id NUMBER NOT NULL,
+    agent_id NUMBER NOT NULL,
+    rol VARCHAR2(20) DEFAULT 'PRIMARY' CHECK (rol IN ('PRIMARY', 'SECONDARY', 'OBSERVER')),
+    data_asignare DATE DEFAULT SYSDATE NOT NULL,
+    CONSTRAINT pk_taf PRIMARY KEY (ticket_id, agent_id),
+    CONSTRAINT fk_taf_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket_fizic(ticket_id) ON DELETE CASCADE,
+    CONSTRAINT fk_taf_agent FOREIGN KEY (agent_id) REFERENCES TickLy.agent_profil(agent_id) ON DELETE CASCADE
+);
+
+CREATE TABLE TickLy.ticket_topic_fizic (
+    ticket_id NUMBER NOT NULL,
+    topic_id NUMBER NOT NULL,
+    relevanta VARCHAR2(20) DEFAULT 'DIRECT' CHECK (relevanta IN ('DIRECT', 'INDIRECT')),
+    CONSTRAINT pk_ttfiz PRIMARY KEY (ticket_id, topic_id),
+    CONSTRAINT fk_ttfiz_ticket FOREIGN KEY (ticket_id) REFERENCES TickLy.ticket_fizic(ticket_id) ON DELETE CASCADE
+    -- FK catre topic_id se verifica prin aplicatie/trigger, fiind pe SV4
 );
 
 CREATE INDEX TickLy.idx_cf_nume_upper ON TickLy.client_fizic(UPPER(nume));

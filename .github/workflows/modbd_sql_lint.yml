@@ -1,0 +1,33 @@
+name: Lint Oracle scripts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'II/MODBD/scripts/**'
+      - '.github/workflows/modbd_sql_lint.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'II/MODBD/scripts/**'
+      - '.github/workflows/modbd_sql_lint.yml'
+
+jobs:
+  lint-sql:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && contains(github.event.head_commit.message, 'MODBD')) ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.title, 'MODBD'))
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install sqlfluff
+        run: pip install sqlfluff
+
+      - name: Lint SQL scripts
+        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/scripts

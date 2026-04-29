@@ -1,0 +1,30 @@
+\chapter{Lista constrângerilor de integritate}
+
+\section{Unicitate}
+\begin{itemize}
+    \item \textbf{i. Unicitate locală:} Implementată prin clauza \texttt{UNIQUE} pe coloane precum \texttt{CNP} (SV1), \texttt{CUI} (SV2) sau \texttt{nume\_departament} (SV4).
+    \item \textbf{ii. Unicitate globală pe fragmente orizontale:} Pentru a evita coliziunea ID-urilor între SV1 și SV2 (de exemplu, să nu existe doi clienți diferiți cu ID-ul 100), am utilizat secvențe cu pas diferit:
+    \begin{itemize}
+        \item SV1: \texttt{START WITH 1 INCREMENT BY 2} (generate ID-uri impare: 1, 3, 5...).
+        \item SV2: \texttt{START WITH 2 INCREMENT BY 2} (generate ID-uri pare: 2, 4, 6...).
+    \end{itemize}
+    \item \textbf{iii. Unicitate globală pe fragmente verticale:} Combinația de coloane \textit{nume, prenume} (SV1) și \textit{email} (SV3) trebuie să fie unică pentru fiecare agent. Am ales sa nu folosim o constrangere pe fragmentarea verticala doar din pricina optimizarii, verificarea a fost lasata, ipotetic, la nivel de app.
+\end{itemize}
+
+\section{Cheie Primară}
+Fiecare tabelă locală are o cheie primară (\texttt{PRIMARY KEY}) pentru integritate locală. La nivel global, cheia primară a fragmentelor verticale (\texttt{agent\_id}) este folosita ca o ancora de salvare pentru a lega datele agentiilor intre SV1 si SV3.
+
+\section{Cheie Externă}
+\begin{itemize}
+    \item \textbf{Local:} Relații standard, de exemplu între \texttt{TICKET\_FIZIC} și \texttt{CLIENT\_FIZIC} pe SV1.
+    \item \textbf{Distant:}
+    \begin{enumerate}
+        \item \textbf{Materialized Views:} Validarea locală față de copia sincronizată a datelor de pe SV4.
+        \item \textbf{Triggere distribuite:} Un trigger la nivel de \textit{Before Insert/Update} care verifică existența cheii pe nodul la distanță.
+    \end{enumerate}
+\end{itemize}
+
+\section{Validare}
+\begin{itemize}
+    \item \textbf{Local:} Constrângeri de tip \texttt{CHECK} (ex: \texttt{rating BETWEEN 1 AND 5}, \texttt{este\_final IN ('Y', 'N')}).
+\end{itemize}

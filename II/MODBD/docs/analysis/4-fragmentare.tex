@@ -1,0 +1,60 @@
+\chapter{Fragmentarea relațiilor}
+
+\section*{a. Fragmentare orizontală primară}
+
+Fragmentarea orizontală primară a fost aplicată pe relația \textit{CLIENT}, având ca scop separarea clienților în funcție de tipul acestora.
+
+\textbf{i. Aplicarea algoritmului de fragmentare orizontală primară}\\
+\begin{itemize}
+    \item $q_1$: Aplicația portalului B2C, care procesează datele persoanelor fizice.
+    \item $q_2$: Aplicația portalului B2B, care procesează datele companiilor.
+\end{itemize}
+
+Fie atributul de partiționare \textit{tip\_client}. Definim setul de predicate simple $Pr = \{p_1, p_2\}$:
+\begin{itemize}
+    \item $p_1 : \text{tip\_client} = \text{'F'}$
+    \item $p_2 : \text{tip\_client} = \text{'J'}$
+\end{itemize}
+
+Din acest set, generăm predicatele posibile:
+\begin{itemize}
+    \item $m_1 = p_1 \wedge \neg p_2 \Rightarrow \text{tip\_client} = \text{'F'}$ (Valid)
+    \item $m_2 = \neg p_1 \wedge p_2 \Rightarrow \text{tip\_client} = \text{'J'}$ (Valid)
+\end{itemize}
+
+Analizând frecvențele de acces, observăm că aplicația $q_1$ accesează exclusiv datele ce satisfac mintermul $m_1$, iar aplicația $q_2$ accesează exclusiv datele ce satisfac mintermul $m_2$.
+
+\textbf{ii. Obținerea fragmentelor orizontale primare}\\
+\begin{itemize}
+    \item $CLIENT\_FIZIC = \sigma_{\text{tip\_client}='F'}(CLIENT)$ --- \textbf{SV1}.
+    \item $CLIENT\_JURIDIC = \sigma_{\text{tip\_client}='J'}(CLIENT)$ --- \textbf{SV2}.
+\end{itemize}
+
+\section*{b. Fragmentare orizontală derivată}
+
+\textbf{i. Obținerea fragmentelor orizontale derivate}\\
+S-a aplicat fragmentarea orizontală derivată pe relația \textit{TICKET}. Fragmentarea se obține aplicând operația de semi-join ($\ltimes$) între relația copil și fragmentele primare ale relației părinte:
+\begin{itemize}
+    \item $TICKET\_FIZIC = TICKET \ltimes_{\text{client\_id}} CLIENT\_FIZIC$ --- \textbf{SV1}.
+    \item $TICKET\_JURIDIC = TICKET \ltimes_{\text{client\_id}} CLIENT\_JURIDIC$ --- \textbf{SV2}.
+\end{itemize}
+
+\section*{c. Fragmentare verticală}
+
+Fragmentarea verticală a fost aplicată pe relația \textit{AGENT}. Pnetru securitate a fost facut: izolarea palolelor de datele publice de profil.
+
+\textbf{i. Aplicarea algoritmului de fragmentare verticală}\\
+Relația globală \textit{AGENT} conține atributele: $A_1$ (\textit{agent\_id}), $A_2$ (\textit{nume}), $A_3$ (\textit{prenume}), $A_4$ (\textit{telefon}), $A_5$ (\textit{email}), $A_6$ (\textit{password\_hash}).
+
+\begin{itemize}
+    \item $q_1$: Modulul operațional (afișarea agentului în aplicație) - accesează $\{A_1, A_2, A_3, A_4\}$.
+    \item $q_2$: Modulul de securitate/autentificare - accesează $\{A_1, A_5, A_6\}$.
+\end{itemize}
+
+\textbf{ii. Obținerea fragmentelor verticale}\\
+Practic, am împărțit tabela inițială extrăgând doar coloanele de care aveam nevoie pentru fiecare modul (operația de proiecție, notată cu $\pi$). S-a păstrat cheia primară (\textit{agent\_id}) în ambele tabele noi, pentru a putea reuni datele ulterior printr-un simplu JOIN. 
+
+\begin{itemize}
+    \item $AGENT\_PROFIL = \pi_{\text{agent\_id, nume, prenume, telefon}}(AGENT)$ --- Fragmentul care conține doar datele publice de contact (\textbf{SV1} și \textbf{SV2}).
+    \item $AGENT\_SEC = \pi_{\text{agent\_id, email, password\_hash}}(AGENT)$ --- Fragmentul care conține exclusiv datele sensibile de login \textbf{SV3}.
+\end{itemize}

@@ -1,0 +1,46 @@
+name: Build DW&BI Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'II/MODBD/docs/analysis/**'
+      - '.github/workflows/modbd_docs.yml'
+
+defaults:
+  run:
+    working-directory: II/MODBD
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && contains(github.event.head_commit.message, 'MODBD'))
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up TeX Live (XeLaTeX)
+        uses: xu-cheng/latex-action@v4
+        with:
+          root_file: main.tex
+          working_directory: II/MODBD/docs/analysis
+          latexmk_use_lualatex: false
+          latexmk_use_xelatex: true
+          latexmk_shell_escape: false
+          compiler: latexmk
+          
+      - name: Publish Analysis Report as release (package)
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp II/MODBD/docs/analysis/main.pdf II/MODBD/docs/analysis/MODBD_Project.pdf
+          gh release delete modbd-docs-latest --yes 2>/dev/null || true
+          gh release create modbd-docs-latest \
+            --title "DW&BI Project (latest)" \
+            --notes "Built from ${{ github.ref_name }} at ${{ github.sha }}." \
+            II/MODBD/docs/analysis/MODBD_Project.pdf

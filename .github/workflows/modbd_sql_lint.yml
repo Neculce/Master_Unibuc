@@ -1,4 +1,4 @@
-name: Lint Oracle scripts
+name: Lint MODBD Oracle scripts
 
 on:
   push:
@@ -29,14 +29,9 @@ jobs:
       - name: Install sqlfluff
         run: pip install sqlfluff
 
-      - name: Lint SQL sv1
-        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/sv1/scripts
-      
-      - name: Lint SQL sv2
-        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/sv2/scripts
-
-      - name: Lint SQL sv3
-        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/sv3/scripts
-
-      - name: Lint SQL sv4
-        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/sv4/scripts
+      - name: Lint SQL Scripts
+        run: |
+          sqlfluff lint II/MODBD/sv*/scripts \
+            --dialect oracle \
+            --exclude-rules RF05,LT12,CP02,LT05 \
+            --templater raw

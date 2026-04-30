@@ -1,4 +1,4 @@
-name: Lint Oracle scripts
+name: Lint DWBI Oracle scripts
 
 on:
   push:

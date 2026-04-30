@@ -6,3 +6,9 @@ max_line_length = 120
 [sqlfluff:core]
 ignore = parsing
 large_file_skip_byte_limit = 0
+
+[sqlfluff:rules:references.special_chars]
+ignore_words = @
+
+[sqlfluff:rules:layout.end_of_file]
+force_newline = true

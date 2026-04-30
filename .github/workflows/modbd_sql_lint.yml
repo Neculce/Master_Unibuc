@@ -29,5 +29,14 @@ jobs:
       - name: Install sqlfluff
         run: pip install sqlfluff
 
-      - name: Lint SQL scripts
-        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/scripts
+      - name: Lint SQL sv1
+        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/sv1/scripts
+      
+      - name: Lint SQL sv2
+        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/sv2/scripts
+
+      - name: Lint SQL sv3
+        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/sv3/scripts
+
+      - name: Lint SQL sv4
+        run: sqlfluff lint --config II/MODBD/.sqlfluff II/MODBD/sv4/scripts

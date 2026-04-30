@@ -6,12 +6,18 @@ EXEC DBMS_MVIEW.REFRESH('TICKLY.categorie', 'F');
 EXEC DBMS_MVIEW.REFRESH('TICKLY.tag', 'F');
 EXEC DBMS_MVIEW.REFRESH('TICKLY.topic', 'F');
 
-INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date) VALUES (1, 'Popescu', 'Maria', '0722111001', DATE '2022-01-15');
-INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date) VALUES (2, 'Ionescu', 'Andrei', '0722111002', DATE '2022-06-01');
-INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date) VALUES (3, 'Dumitrescu', 'Alexandru', '0722111004', DATE '2023-09-01');
+INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date)
+VALUES (1, 'Popescu', 'Maria', '0722111001', DATE '2022-01-15');
+
+INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date)
+VALUES (2, 'Ionescu', 'Andrei', '0722111002', DATE '2022-06-01');
+
+INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date)
+VALUES (3, 'Dumitrescu', 'Alexandru', '0722111004', DATE '2023-09-01');
 
 INSERT INTO TICKLY.client_fizic (email, phone, cnp, nume, prenume, data_nasterii)
 VALUES ('ion.vasile@gmail.com', '0733123456', '1890101123456', 'Vasile', 'Ion', DATE '1989-01-01');
+
 INSERT INTO TICKLY.client_fizic (email, phone, cnp, nume, prenume, data_nasterii)
 VALUES ('ana.mihai@yahoo.ro', '0744234567', '2950515234567', 'Mihai', 'Ana', DATE '1995-05-15');
 

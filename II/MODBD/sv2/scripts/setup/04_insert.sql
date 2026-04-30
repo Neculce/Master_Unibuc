@@ -6,12 +6,18 @@ EXEC DBMS_MVIEW.REFRESH('TICKLY.categorie', 'F');
 EXEC DBMS_MVIEW.REFRESH('TICKLY.tag', 'F');
 EXEC DBMS_MVIEW.REFRESH('TICKLY.topic', 'F');
 
-INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date) VALUES (1, 'Popescu', 'Maria', '0722111001', DATE '2022-01-15');
-INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date) VALUES (2, 'Ionescu', 'Andrei', '0722111002', DATE '2022-06-01');
-INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date) VALUES (3, 'Dumitrescu', 'Alexandru', '0722111004', DATE '2023-09-01');
+INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date)
+VALUES (1, 'Popescu', 'Maria', '0722111001', DATE '2022-01-15');
+
+INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date)
+VALUES (2, 'Ionescu', 'Andrei', '0722111002', DATE '2022-06-01');
+
+INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date)
+VALUES (3, 'Dumitrescu', 'Alexandru', '0722111004', DATE '2023-09-01');
 
 INSERT INTO TICKLY.client_juridic (email, phone, cui, denumire, sediu_social, reprezentant_legal)
 VALUES ('contact@softtech.ro', '0213123456', 'RO12345678', 'SoftTech SRL', 'Bucuresti', 'Mihai Popescu');
+
 INSERT INTO TICKLY.client_juridic (email, phone, cui, denumire, sediu_social, reprezentant_legal)
 VALUES ('office@constructii-abc.ro', '0264123456', 'RO87654321', 'Constructii ABC SA', 'Cluj', 'Andrei Ionescu');
 

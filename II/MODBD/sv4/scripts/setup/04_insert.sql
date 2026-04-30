@@ -1,27 +1,62 @@
 ALTER SESSION SET CONTAINER = PDB4;
 
-INSERT INTO TICKLY.prioritate (nivel, nume, descriere, timp_raspuns_ore) VALUES (1, 'Critica', 'Interventie imediata', 1);
-INSERT INTO TICKLY.prioritate (nivel, nume, descriere, timp_raspuns_ore) VALUES (2, 'Inalta', 'In aceeasi zi', 4);
-INSERT INTO TICKLY.prioritate (nivel, nume, descriere, timp_raspuns_ore) VALUES (3, 'Medie', 'In 24-48 ore', 24);
-INSERT INTO TICKLY.prioritate (nivel, nume, descriere, timp_raspuns_ore) VALUES (4, 'Scazuta', 'In 3-5 zile', 72);
-INSERT INTO TICKLY.prioritate (nivel, nume, descriere, timp_raspuns_ore) VALUES (5, 'Minima', 'Cand este posibil', 120);
+INSERT INTO TICKLY.PRIORITATE (NIVEL, NUME, DESCRIERE, TIMP_RASPUNS_ORE)
+VALUES (1, 'Critica', 'Interventie imediata', 1);
 
-INSERT INTO TICKLY.status (nume, descriere, este_final) VALUES ('Deschis', 'Ticket nou, nepreluat', 'N');
-INSERT INTO TICKLY.status (nume, descriere, este_final) VALUES ('In desfasurare', 'Lucrat de agent', 'N');
-INSERT INTO TICKLY.status (nume, descriere, este_final) VALUES ('In asteptare', 'Asteapta raspuns client', 'N');
-INSERT INTO TICKLY.status (nume, descriere, este_final) VALUES ('Rezolvat', 'Solutie aplicata', 'Y');
-INSERT INTO TICKLY.status (nume, descriere, este_final) VALUES ('Inchis', 'Ticket inchis', 'Y');
+INSERT INTO TICKLY.PRIORITATE (NIVEL, NUME, DESCRIERE, TIMP_RASPUNS_ORE)
+VALUES (2, 'Inalta', 'In aceeasi zi', 4);
 
-INSERT INTO TICKLY.categorie (nume, descriere, categorie_parinte_id) VALUES ('Software', 'Probleme legate de aplicatii', NULL);
-INSERT INTO TICKLY.categorie (nume, descriere, categorie_parinte_id) VALUES ('Licente', 'Activare, prelungire licente', NULL);
-INSERT INTO TICKLY.categorie (nume, descriere, categorie_parinte_id)
-SELECT 'Bug', 'Defecte in produs', categorie_id FROM TICKLY.categorie WHERE nume = 'Software';
+INSERT INTO TICKLY.PRIORITATE (NIVEL, NUME, DESCRIERE, TIMP_RASPUNS_ORE)
+VALUES (3, 'Medie', 'In 24-48 ore', 24);
 
-INSERT INTO TICKLY.topic (nume, descriere, topic_type) VALUES ('Instalare licenta', 'Probleme la activare', 'S');
-INSERT INTO TICKLY.topic (nume, descriere, topic_type) VALUES ('TICKLY Enterprise', 'Produs plan Enterprise', 'P');
+INSERT INTO TICKLY.PRIORITATE (NIVEL, NUME, DESCRIERE, TIMP_RASPUNS_ORE)
+VALUES (4, 'Scazuta', 'In 3-5 zile', 72);
 
-INSERT INTO TICKLY.tag (nume, culoare, descriere) VALUES ('urgent', '#FF0000', 'Cerere urgenta');
-INSERT INTO TICKLY.tag (nume, culoare, descriere) VALUES ('licenta', '#0066CC', 'Legat de licente');
-INSERT INTO TICKLY.tag (nume, culoare, descriere) VALUES ('bug', '#FF6600', 'Defect confirmat');
+INSERT INTO TICKLY.PRIORITATE (NIVEL, NUME, DESCRIERE, TIMP_RASPUNS_ORE)
+VALUES (5, 'Minima', 'Cand este posibil', 120);
+
+INSERT INTO TICKLY.STATUS (NUME, DESCRIERE, ESTE_FINAL)
+VALUES ('Deschis', 'Ticket nou, nepreluat', 'N');
+
+INSERT INTO TICKLY.STATUS (NUME, DESCRIERE, ESTE_FINAL)
+VALUES ('In desfasurare', 'Lucrat de agent', 'N');
+
+INSERT INTO TICKLY.STATUS (NUME, DESCRIERE, ESTE_FINAL)
+VALUES ('In asteptare', 'Asteapta raspuns client', 'N');
+
+INSERT INTO TICKLY.STATUS (NUME, DESCRIERE, ESTE_FINAL)
+VALUES ('Rezolvat', 'Solutie aplicata', 'Y');
+
+INSERT INTO TICKLY.STATUS (NUME, DESCRIERE, ESTE_FINAL)
+VALUES ('Inchis', 'Ticket inchis', 'Y');
+
+INSERT INTO TICKLY.CATEGORIE (NUME, DESCRIERE, CATEGORIE_PARINTE_ID)
+VALUES ('Software', 'Probleme legate de aplicatii', NULL);
+
+INSERT INTO TICKLY.CATEGORIE (NUME, DESCRIERE, CATEGORIE_PARINTE_ID)
+VALUES ('Licente', 'Activare, prelungire licente', NULL);
+
+INSERT INTO TICKLY.CATEGORIE (NUME, DESCRIERE, CATEGORIE_PARINTE_ID)
+SELECT
+    'Bug' AS NUME,
+    'Defecte in produs' AS DESCRIERE,
+    CATEGORIE_ID AS CATEGORIE_PARINTE_ID
+FROM TICKLY.CATEGORIE
+WHERE NUME = 'Software';
+
+INSERT INTO TICKLY.TOPIC (NUME, DESCRIERE, TOPIC_TYPE)
+VALUES ('Instalare licenta', 'Probleme la activare', 'S');
+
+INSERT INTO TICKLY.TOPIC (NUME, DESCRIERE, TOPIC_TYPE)
+VALUES ('TICKLY Enterprise', 'Produs plan Enterprise', 'P');
+
+INSERT INTO TICKLY.TAG (NUME, CULOARE, DESCRIERE)
+VALUES ('urgent', '#FF0000', 'Cerere urgenta');
+
+INSERT INTO TICKLY.TAG (NUME, CULOARE, DESCRIERE)
+VALUES ('licenta', '#0066CC', 'Legat de licente');
+
+INSERT INTO TICKLY.TAG (NUME, CULOARE, DESCRIERE)
+VALUES ('bug', '#FF6600', 'Defect confirmat');
 
 COMMIT;

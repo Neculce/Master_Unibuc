@@ -1,13 +1,30 @@
 ALTER SESSION SET CONTAINER = PDB1;
 
-CREATE OR REPLACE VIEW TickLy.v_agent_global AS
-SELECT 
-    p.agent_id, p.nume, p.prenume, p.telefon,
-    s.email, s.is_active
-FROM TickLy.agent_profil p
-JOIN TickLy.agent_sec@link_sv3 s ON p.agent_id = s.agent_id;
+CREATE OR REPLACE VIEW TICKLY.V_AGENT_GLOBAL AS
+SELECT
+    P.AGENT_ID,
+    P.NUME,
+    P.PRENUME,
+    P.TELEFON,
+    S.EMAIL,
+    S.IS_ACTIVE
+FROM TICKLY.AGENT_PROFIL P
+INNER JOIN TICKLY.AGENT_SEC@LINK_SV3 S
+    ON P.AGENT_ID = S.AGENT_ID;
 
-CREATE OR REPLACE FORCE VIEW TickLy.v_toate_tichetele AS
-SELECT ticket_id, client_id, 'FIZIC' AS tip, titlu, data_creare FROM TickLy.ticket_fizic
+CREATE OR REPLACE FORCE VIEW TICKLY.V_TOATE_TICHETELE AS
+SELECT
+    TICKET_ID,
+    CLIENT_ID,
+    'FIZIC' AS TIP,
+    TITLU,
+    DATA_CREARE
+FROM TICKLY.TICKET_FIZIC
 UNION ALL
-SELECT ticket_id, client_id, 'JURIDIC' AS tip, titlu, data_creare FROM TickLy.ticket_juridic@link_sv2;
+SELECT
+    TICKET_ID,
+    CLIENT_ID,
+    'JURIDIC' AS TIP,
+    TITLU,
+    DATA_CREARE
+FROM TICKLY.TICKET_JURIDIC@LINK_SV2;

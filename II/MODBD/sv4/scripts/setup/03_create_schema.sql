@@ -1,7 +1,7 @@
 ALTER SESSION SET CONTAINER = PDB4;
 WHENEVER SQLERROR EXIT FAILURE;
 
-CREATE TABLE TickLy.prioritate (
+CREATE TABLE TICKLY.prioritate (
     prioritate_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nivel NUMBER(1) NOT NULL UNIQUE CHECK (nivel BETWEEN 1 AND 5),
     nume VARCHAR2(20) NOT NULL UNIQUE,
@@ -9,36 +9,36 @@ CREATE TABLE TickLy.prioritate (
     timp_raspuns_ore NUMBER
 );
 
-CREATE TABLE TickLy.status (
+CREATE TABLE TICKLY.status (
     status_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nume VARCHAR2(30) NOT NULL UNIQUE,
     descriere VARCHAR2(200),
     este_final CHAR(1) DEFAULT 'N' CHECK (este_final IN ('Y', 'N'))
 );
 
-CREATE TABLE TickLy.categorie (
+CREATE TABLE TICKLY.categorie (
     categorie_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nume VARCHAR2(100) NOT NULL UNIQUE,
     descriere VARCHAR2(500),
     categorie_parinte_id NUMBER,
-    CONSTRAINT fk_categorie_parinte FOREIGN KEY (categorie_parinte_id) REFERENCES TickLy.categorie(categorie_id)
+    CONSTRAINT fk_categorie_parinte FOREIGN KEY (categorie_parinte_id) REFERENCES TICKLY.categorie(categorie_id)
 );
 
-CREATE TABLE TickLy.tag (
+CREATE TABLE TICKLY.tag (
     tag_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nume VARCHAR2(50) NOT NULL UNIQUE,
     culoare VARCHAR2(20),
     descriere VARCHAR2(200)
 );
 
-CREATE TABLE TickLy.topic (
+CREATE TABLE TICKLY.topic (
     topic_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nume VARCHAR2(100) NOT NULL,
     descriere VARCHAR2(500),
     topic_type CHAR(1) NOT NULL CHECK (topic_type IN ('S', 'P'))
 );
 
-CREATE TABLE TickLy.kb_article (
+CREATE TABLE TICKLY.kb_article (
     kb_article_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     agent_id NUMBER NOT NULL,
     categorie_id NUMBER,
@@ -49,40 +49,40 @@ CREATE TABLE TickLy.kb_article (
     rating_mediu NUMBER(3,2),
     data_creare DATE DEFAULT SYSDATE NOT NULL,
     este_public CHAR(1) DEFAULT 'Y' CHECK (este_public IN ('Y', 'N')),
-    CONSTRAINT fk_kb_categorie FOREIGN KEY (categorie_id) REFERENCES TickLy.categorie(categorie_id)
+    CONSTRAINT fk_kb_categorie FOREIGN KEY (categorie_id) REFERENCES TICKLY.categorie(categorie_id)
 );
 
-CREATE TABLE TickLy.departament (
+CREATE TABLE TICKLY.departament (
     departament_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nume VARCHAR2(100) NOT NULL UNIQUE,
     descriere VARCHAR2(500),
     manager_id NUMBER NOT NULL
 );
 
-CREATE TABLE TickLy.topic_serviciu (
+CREATE TABLE TICKLY.topic_serviciu (
     topic_id NUMBER PRIMARY KEY,
     tip_serviciu VARCHAR2(50) NOT NULL,
     durata_estimata NUMBER,
     tarif NUMBER(10,2),
-    CONSTRAINT fk_topic_serviciu FOREIGN KEY (topic_id) REFERENCES TickLy.topic(topic_id) ON DELETE CASCADE
+    CONSTRAINT fk_topic_serviciu FOREIGN KEY (topic_id) REFERENCES TICKLY.topic(topic_id) ON DELETE CASCADE
 );
 
-CREATE TABLE TickLy.topic_produs (
+CREATE TABLE TICKLY.topic_produs (
     topic_id NUMBER PRIMARY KEY,
     versiune VARCHAR2(20),
     categorie VARCHAR2(50),
     pret NUMBER(10,2),
     stoc NUMBER,
-    CONSTRAINT fk_topic_produs FOREIGN KEY (topic_id) REFERENCES TickLy.topic(topic_id) ON DELETE CASCADE
+    CONSTRAINT fk_topic_produs FOREIGN KEY (topic_id) REFERENCES TICKLY.topic(topic_id) ON DELETE CASCADE
 );
 
-CREATE MATERIALIZED VIEW LOG ON TickLy.prioritate WITH PRIMARY KEY;
-CREATE MATERIALIZED VIEW LOG ON TickLy.status WITH PRIMARY KEY;
-CREATE MATERIALIZED VIEW LOG ON TickLy.categorie WITH PRIMARY KEY;
-CREATE MATERIALIZED VIEW LOG ON TickLy.tag WITH PRIMARY KEY;
-CREATE MATERIALIZED VIEW LOG ON TickLy.topic WITH PRIMARY KEY;
-CREATE MATERIALIZED VIEW LOG ON TickLy.departament WITH PRIMARY KEY;
-CREATE MATERIALIZED VIEW LOG ON TickLy.topic_serviciu WITH PRIMARY KEY;
-CREATE MATERIALIZED VIEW LOG ON TickLy.topic_produs WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TICKLY.prioritate WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TICKLY.status WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TICKLY.categorie WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TICKLY.tag WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TICKLY.topic WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TICKLY.departament WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TICKLY.topic_serviciu WITH PRIMARY KEY;
+CREATE MATERIALIZED VIEW LOG ON TICKLY.topic_produs WITH PRIMARY KEY;
 
 COMMIT;

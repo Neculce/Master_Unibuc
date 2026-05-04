@@ -18,13 +18,13 @@ VALUES (3, 'Dumitrescu', 'Alexandru', '0722111004', DATE '2023-09-01');
 INSERT INTO TICKLY.client_fizic (phone, cnp, nume, prenume, data_nasterii)
 VALUES ('0733123456', '1890101123456', 'Vasile', 'Ion', DATE '1989-01-01');
 
-INSERT INTO TICKLY.client_fizic (email, phone, cnp, nume, prenume, data_nasterii)
+INSERT INTO TICKLY.client_fizic (phone, cnp, nume, prenume, data_nasterii)
 VALUES ('0744234567', '2950515234567', 'Mihai', 'Ana', DATE '1995-05-15');
 
 INSERT INTO TICKLY.ticket_fizic (client_id, prioritate_id, status_id, categorie_id, titlu, descriere, data_creare)
 SELECT c.client_id, pr.prioritate_id, s.status_id, cat.categorie_id, 'Nu se activeaza licenta', 'Eroare la activare.', SYSDATE
 FROM TICKLY.client_fizic c, TICKLY.prioritate pr, TICKLY.status s, TICKLY.categorie cat
-WHERE c.email = 'ion.vasile@gmail.com' AND pr.nivel = 2 AND s.nume = 'Deschis' AND cat.nume = 'Licente';
+WHERE c.cnp = '1890101123456' AND pr.nivel = 2 AND s.nume = 'Deschis' AND cat.nume = 'Licente';
 
 COMMIT;
 

@@ -21,10 +21,10 @@ VALUES ('0213123456', 'RO12345678', 'SoftTech SRL', 'Bucuresti', 'Mihai Popescu'
 INSERT INTO TICKLY.client_juridic (phone, cui, denumire, sediu_social, reprezentant_legal)
 VALUES ('0264123456', 'RO87654321', 'Constructii ABC SA', 'Cluj', 'Andrei Ionescu');
 
-INSERT INTO TICKLY.ticket_fizic (client_id, prioritate_id, status_id, categorie_id, titlu, descriere, data_creare)
-SELECT c.client_id, pr.prioritate_id, s.status_id, cat.categorie_id, 'Nu se activeaza licenta', 'Eroare la activare.', SYSDATE
-FROM TICKLY.client_fizic c, TICKLY.prioritate pr, TICKLY.status s, TICKLY.categorie cat
-WHERE c.cnp = '1890101123456' AND pr.nivel = 2 AND s.nume = 'Deschis' AND cat.nume = 'Licente';
+INSERT INTO TICKLY.ticket_juridic (client_id, prioritate_id, status_id, categorie_id, titlu, descriere, data_creare)
+SELECT c.client_id, pr.prioritate_id, s.status_id, cat.categorie_id, 'Factura gresita', 'Factura pe luna curenta.', SYSDATE
+FROM TICKLY.client_juridic c, TICKLY.prioritate pr, TICKLY.status s, TICKLY.categorie cat
+WHERE c.cui = 'RO12345678' AND pr.nivel = 3 AND s.nume = 'Deschis' AND cat.nume = 'Software';
 
 COMMIT;
 

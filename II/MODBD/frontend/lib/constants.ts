@@ -7,10 +7,10 @@ export type UserType = "B2C" | "B2B" | "AGENT";
 export const DB_CONFIG = {
   // B2C instance - sv1
   SV1_B2C: {
-    name: "sv1",
+    name: "SV1",
     type: "B2C",
     port: 1521,
-    pdb: "orclpdb1",
+    pdb: "PDB1",
     tables: {
       client: "TICKLY.client_fizic",
       ticket: "TICKLY.ticket_fizic",
@@ -26,10 +26,10 @@ export const DB_CONFIG = {
 
   // B2B instance - sv2
   SV2_B2B: {
-    name: "sv2",
+    name: "SV2",
     type: "B2B",
     port: 1521,
-    pdb: "orclpdb1",
+    pdb: "PDB2",
     tables: {
       client: "TICKLY.client_juridic",
       ticket: "TICKLY.ticket_juridic",
@@ -45,10 +45,10 @@ export const DB_CONFIG = {
 
   // Security instance - sv3
   SV3_SECURITY: {
-    name: "sv3",
+    name: "SV3",
     type: "AGENT",
     port: 1521,
-    pdb: "orclpdb1",
+    pdb: "PDB3",
     tables: {
       agent_sec: "TICKLY.agent_sec",
       ticket: "TICKLY.v_ticket",
@@ -62,10 +62,10 @@ export const DB_CONFIG = {
 
   // Template/Reference instance - sv4
   SV4_TEMPLATE: {
-    name: "sv4",
+    name: "SV4",
     type: "REFERENCE",
     port: 1522,
-    pdb: "orclpdb1",
+    pdb: "PDB4",
     tables: {
       prioritate: "TICKLY.prioritate",
       status: "TICKLY.status",

@@ -3,6 +3,7 @@ import { compare } from "bcryptjs";
 import { runQueryByUserType } from "@/lib/db";
 import { setSession } from "@/lib/auth";
 import { getTableName } from "@/lib/constants";
+import { type Session } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +42,14 @@ export async function POST(request: NextRequest) {
         return null;
       }
       return null;
-    }).catch(() => null);
+    }).catch((err) => {
+        console.error(`Error on server SV1:`, err.message);
+        return null;
+      });
 
     // If not found in B2C, try B2B (sv2)
     if (!found) {
+      let found: Session | null = null;
       found = await runQueryByUserType("B2B", async (conn) => {
         const clientTable = getTableName("B2B", "client");
         const result = await conn.execute(
@@ -70,14 +75,18 @@ export async function POST(request: NextRequest) {
           return null;
         }
         return null;
-      }).catch(() => null);
+      }).catch((err) => {
+        console.error(`Error on server SV2:`, err.message);
+        return null;
+      });
     }
 
     // If not found in clients, try Agent (sv3)
     if (!found) {
+      let found: Session | null = null;
       found = await runQueryByUserType("AGENT", async (conn) => {
         const result = await conn.execute(
-          `SELECT agent_id, password_hash, prenume||' '||nume AS display_name FROM TICKLY.agent_sec WHERE email = :email`,
+          `SELECT agent_id, password_hash FROM TICKLY.agent_sec WHERE email = :email`,
           [email]
         );
         const rows = (result.rows as Record<string, unknown>[]) || [];
@@ -99,7 +108,10 @@ export async function POST(request: NextRequest) {
           return null;
         }
         return null;
-      }).catch(() => null);
+      }).catch((err) => {
+        console.error(`Error on server SV3:`, err.message);
+        return null;
+      })
     }
 
     if (!found) {

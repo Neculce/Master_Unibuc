@@ -8,4 +8,18 @@ CREATE TABLE TICKLY.agent_sec (
     is_active CHAR(1) DEFAULT 'Y' CHECK (is_active IN ('Y', 'N'))
 );
 
+CREATE TABLE TICKLY.client_fizic_sec (
+    client_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email VARCHAR2(100) NOT NULL UNIQUE,
+    password_hash VARCHAR2(255) NOT NULL,
+    is_active CHAR(1) DEFAULT 'Y' CHECK (is_active IN ('Y', 'N'))
+);
+
+CREATE TABLE TICKLY.client_juridic_sec (
+    client_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email VARCHAR2(100) NOT NULL UNIQUE,
+    password_hash VARCHAR2(255) NOT NULL,
+    is_active CHAR(1) DEFAULT 'Y' CHECK (is_active IN ('Y', 'N'))
+);
+
 COMMIT;

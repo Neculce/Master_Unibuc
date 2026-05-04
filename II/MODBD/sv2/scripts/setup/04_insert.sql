@@ -15,16 +15,16 @@ VALUES (2, 'Ionescu', 'Andrei', '0722111002', DATE '2022-06-01');
 INSERT INTO TICKLY.agent_profil (agent_id, nume, prenume, telefon, hire_date)
 VALUES (3, 'Dumitrescu', 'Alexandru', '0722111004', DATE '2023-09-01');
 
-INSERT INTO TICKLY.client_juridic (email, phone, cui, denumire, sediu_social, reprezentant_legal)
-VALUES ('contact@softtech.ro', '0213123456', 'RO12345678', 'SoftTech SRL', 'Bucuresti', 'Mihai Popescu');
+INSERT INTO TICKLY.client_juridic (phone, cui, denumire, sediu_social, reprezentant_legal)
+VALUES ('0213123456', 'RO12345678', 'SoftTech SRL', 'Bucuresti', 'Mihai Popescu');
 
-INSERT INTO TICKLY.client_juridic (email, phone, cui, denumire, sediu_social, reprezentant_legal)
-VALUES ('office@constructii-abc.ro', '0264123456', 'RO87654321', 'Constructii ABC SA', 'Cluj', 'Andrei Ionescu');
+INSERT INTO TICKLY.client_juridic (phone, cui, denumire, sediu_social, reprezentant_legal)
+VALUES ('0264123456', 'RO87654321', 'Constructii ABC SA', 'Cluj', 'Andrei Ionescu');
 
-INSERT INTO TICKLY.ticket_juridic (client_id, prioritate_id, status_id, categorie_id, titlu, descriere, data_creare)
-SELECT c.client_id, pr.prioritate_id, s.status_id, cat.categorie_id, 'Factura gresita', 'Factura pe luna curenta.', SYSDATE
-FROM TICKLY.client_juridic c, TICKLY.prioritate pr, TICKLY.status s, TICKLY.categorie cat
-WHERE c.email = 'contact@softtech.ro' AND pr.nivel = 3 AND s.nume = 'Deschis' AND cat.nume = 'Software';
+INSERT INTO TICKLY.ticket_fizic (client_id, prioritate_id, status_id, categorie_id, titlu, descriere, data_creare)
+SELECT c.client_id, pr.prioritate_id, s.status_id, cat.categorie_id, 'Nu se activeaza licenta', 'Eroare la activare.', SYSDATE
+FROM TICKLY.client_fizic c, TICKLY.prioritate pr, TICKLY.status s, TICKLY.categorie cat
+WHERE c.cnp = '1890101123456' AND pr.nivel = 2 AND s.nume = 'Deschis' AND cat.nume = 'Licente';
 
 COMMIT;
 

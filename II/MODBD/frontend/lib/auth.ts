@@ -2,14 +2,14 @@ import { cookies } from "next/headers";
 import { type UserType } from "./constants";
 
 const SESSION_COOKIE = "tickly_session";
-const SESSION_MAX_AGE = 60 * 60 * 24; // 24h
+const SESSION_MAX_AGE = 60 * 60 * 24; 
 
 export type Session = {
   role: "client" | "agent";
   id: number;
   email: string;
   name: string;
-  userType?: UserType; // B2C, B2B for clients; AGENT for agents
+  userType?: UserType; 
 };
 
 export async function getSession(): Promise<Session | null> {

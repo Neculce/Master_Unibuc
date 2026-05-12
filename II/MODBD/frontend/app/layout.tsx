@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
-import { getSession } from "@/lib/auth"; // <-- Importăm sesiunea
+import { getSession } from "@/lib/auth"; 
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 1. Obținem sesiunea pe server (Server Component)
+  
   const session = await getSession();
 
   return (

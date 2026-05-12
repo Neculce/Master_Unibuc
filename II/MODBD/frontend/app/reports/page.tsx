@@ -20,20 +20,20 @@ import {
   Sector
 } from "recharts";
 
-// --- CULORI & CONFIGURĂRI ---
+
 const COLORS = {
-  primary: "#3B82F6", // Blue 500
+  primary: "#3B82F6", 
   primaryGradientStart: "#60A5FA",
   primaryGradientEnd: "#2563EB",
-  secondary: "#F59E0B", // Amber 500
+  secondary: "#F59E0B", 
   success: "#10B981",
   danger: "#EF4444",
-  textMain: "#1E293B", // Slate 800
-  textSub: "#64748B",  // Slate 500
+  textMain: "#1E293B", 
+  textSub: "#64748B",  
   grid: "#E2E8F0"
 };
 
-// Componenta Card
+
 function DashboardCard({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
   return (
     <div className={`bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex flex-col ${className}`}>
@@ -47,7 +47,7 @@ function DashboardCard({ title, children, className = "" }: { title: string, chi
   );
 }
 
-// Tooltip Modern (Sticlă)
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -108,33 +108,33 @@ export default function ReportsPage() {
     </div>
   );
 
-  // --- PREGĂTIRE DATE (CASTING EXPLICIT LA NUMBER) ---
   
-  // 1. SLA
+  
+  
   const slaTotal = Number(data?.sla?.TOTAL_CRITICE || 0);
   const slaOk = Number(data?.sla?.RESPECTAT_SLA || 0);
   const slaPercent = slaTotal > 0 ? Math.round((slaOk / slaTotal) * 100) : 0;
   const slaColor = slaPercent >= 95 ? COLORS.success : slaPercent >= 75 ? COLORS.secondary : COLORS.danger;
 
-  // 2. Trend
+  
   const trendData = [...(data?.trend || [])].reverse().map((item: any) => ({
     name: `${item.LUNA_NUME?.substring(0, 3)} '${item.AN?.toString().slice(-2)}`,
     Deschise: Number(item.TICHETE_DESCHISE),
     Rezolvate: Number(item.TICHETE_REZOLVATE),
   }));
 
-  // 3. Topics
+  
   const topicsData = data?.topics?.map((t: any) => ({
     name: t.TOPIC_NUME,
     tichete: Number(t.TOTAL_TICHETE),
     type: t.TOPIC_TYPE
   })) || [];
 
-  // 4. Agents (AICI ESTE CHEIA PENTRU GRAFICUL TAU)
+  
   const agentsData = data?.agents?.map((a: any) => ({
     name: a.NUME_COMPLET ? a.NUME_COMPLET.split(' ')[0] : "Anonim",
     fullName: a.NUME_COMPLET,
-    // Cast explicit la Number, altfel Recharts nu deseneaza nimic
+    
     Rezolvate: Number(a.TICHETE_REZOLVATE || 0),
     "Medie Ore": Number(a.MEDIE_ORE || 0),
   })) || [];

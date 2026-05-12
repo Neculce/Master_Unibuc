@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type MetaData = {
-  departments: { DEPARTAMENT_ID: number; NUME: string }[];
   priorities: { PRIORITATE_ID: number; NUME: string }[];
   categories: { CATEGORIE_ID: number; NUME: string }[];
 };
@@ -17,16 +16,15 @@ export default function NewTicketPage() {
   const [meta, setMeta] = useState<MetaData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
+  
   const [formData, setFormData] = useState({
     titlu: "",
     descriere: "",
-    departament_id: "",
     prioritate_id: "",
     categorie_id: "",
   });
 
-  // Fetch dropdown options
+  
   useEffect(() => {
     fetch("/api/tickets/meta")
       .then((r) => r.json())
@@ -40,8 +38,9 @@ export default function NewTicketPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.titlu || !formData.departament_id || !formData.prioritate_id) {
-      alert("Te rog completează câmpurile obligatorii.");
+    
+    if (!formData.titlu || !formData.categorie_id || !formData.prioritate_id) {
+      alert("Te rog completează câmpurile obligatorii (Subiect, Categorie, Prioritate).");
       return;
     }
 
@@ -57,7 +56,7 @@ export default function NewTicketPage() {
 
       if (!res.ok) throw new Error(json.error || "A apărut o eroare.");
 
-      // Redirect la pagina ticketului creat
+      
       router.push(`/tickets/${json.ticket_id}`);
       router.refresh();
     } catch (e: any) {
@@ -84,7 +83,6 @@ export default function NewTicketPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Breadcrumbs & Header */}
       <div className="mb-8">
         <Link
           href="/"
@@ -98,7 +96,6 @@ export default function NewTicketPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-card border border-gray-100 space-y-6">
-        {/* Titlu */}
         <div>
           <label htmlFor="titlu" className="block text-sm font-semibold text-gray-700 mb-1.5">
             Subiect <span className="text-red-500">*</span>
@@ -116,24 +113,24 @@ export default function NewTicketPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Departament */}
+          {/* Categorie in loc de departament */}
           <div>
-            <label htmlFor="departament_id" className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Departament <span className="text-red-500">*</span>
+            <label htmlFor="categorie_id" className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Categorie <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <select
-                id="departament_id"
-                name="departament_id"
-                value={formData.departament_id}
+                id="categorie_id"
+                name="categorie_id"
+                value={formData.categorie_id}
                 onChange={handleChange}
                 className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
                 required
               >
-                <option value="">Alege departamentul...</option>
-                {meta?.departments.map((d) => (
-                  <option key={d.DEPARTAMENT_ID} value={d.DEPARTAMENT_ID}>
-                    {d.NUME}
+                <option value="">Alege categoria...</option>
+                {meta?.categories.map((c) => (
+                  <option key={c.CATEGORIE_ID} value={c.CATEGORIE_ID}>
+                    {c.NUME}
                   </option>
                 ))}
               </select>
@@ -143,7 +140,6 @@ export default function NewTicketPage() {
             </div>
           </div>
 
-          {/* Prioritate */}
           <div>
             <label htmlFor="prioritate_id" className="block text-sm font-semibold text-gray-700 mb-1.5">
               Prioritate <span className="text-red-500">*</span>
@@ -171,33 +167,6 @@ export default function NewTicketPage() {
           </div>
         </div>
 
-        {/* Categorie */}
-        <div>
-          <label htmlFor="categorie_id" className="block text-sm font-semibold text-gray-700 mb-1.5">
-            Categorie (Opțional)
-          </label>
-          <div className="relative">
-            <select
-              id="categorie_id"
-              name="categorie_id"
-              value={formData.categorie_id}
-              onChange={handleChange}
-              className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-            >
-              <option value="">Alege categoria...</option>
-              {meta?.categories.map((c) => (
-                <option key={c.CATEGORIE_ID} value={c.CATEGORIE_ID}>
-                  {c.NUME}
-                </option>
-              ))}
-            </select>
-            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-              expand_more
-            </span>
-          </div>
-        </div>
-
-        {/* Descriere */}
         <div>
           <label htmlFor="descriere" className="block text-sm font-semibold text-gray-700 mb-1.5">
             Descriere detaliată
@@ -213,7 +182,6 @@ export default function NewTicketPage() {
           />
         </div>
 
-        {/* Actions */}
         <div className="pt-4 flex items-center justify-end gap-3">
           <Link
             href="/"

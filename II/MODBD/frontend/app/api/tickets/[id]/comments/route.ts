@@ -18,7 +18,7 @@ export async function POST(
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Determine user type from session or default to B2C
+  
   const userType = (session.userType || "B2C") as "B2C" | "B2B" | "AGENT";
 
   let body: { content?: string; is_internal?: boolean };
@@ -36,35 +36,45 @@ export async function POST(
   try {
     const result = await runQueryByUserType(userType, async (conn) => {
       const ticketTable = getTableName(userType, "ticket");
-      const commentClientTable = getTableName(userType, "comment_client");
-      const commentAgentTable = getTableName(userType, "comment_agent");
-
+      
+      
       const ticketCheck = await conn.execute(
-        `SELECT ticket_id, client_id FROM ${ticketTable} WHERE ticket_id = :id`,
+        `SELECT ticket_id, client_id, ${userType === "AGENT" ? "tip_client" : "'LOCAL'"} as tip 
+         FROM ${ticketTable} WHERE ticket_id = :id`,
         [ticketId]
       );
+      
       const rows = (ticketCheck.rows as Record<string, unknown>[]) || [];
       if (rows.length === 0) return { error: "not_found" as const };
 
       const clientId = rows[0].CLIENT_ID != null ? Number(rows[0].CLIENT_ID) : null;
+      const tipClient = rows[0].TIP;
 
       if (session.role === "client") {
         if (clientId !== session.id) return { error: "forbidden" as const };
+        const commentTable = getTableName(userType, "comment_client");
         await conn.execute(
-          `INSERT INTO ${commentClientTable} (ticket_id, client_id, content) VALUES (:ticket_id, :client_id, :content)`,
+          `INSERT INTO ${commentTable} (ticket_id, client_id, content) VALUES (:ticket_id, :client_id, :content)`,
           { ticket_id: ticketId, client_id: session.id, content }
         );
       } else {
-        if (session.role !== "agent") return { error: "forbidden" as const };
+        
+        let targetTable = "TICKLY.comment_agent_fizic"; 
+        if (tipClient === "JURIDIC") {
+          targetTable = "TICKLY.comment_agent_juridic@LINK_SV2";
+        }
+
         await conn.execute(
-          `INSERT INTO ${commentAgentTable} (ticket_id, agent_id, content, is_internal) VALUES (:ticket_id, :agent_id, :content, :is_internal)`,
-          { ticket_id: ticketId, agent_id: session.id, content, is_internal: isInternal ? "Y" : "N" }
+          `INSERT INTO ${targetTable} (ticket_id, agent_id, content, is_internal) 
+           VALUES (:ticket_id, :agent_id, :content, :is_internal)`,
+          { 
+            ticket_id: ticketId, 
+            agent_id: session.id, 
+            content, 
+            is_internal: isInternal ? "Y" : "N" 
+          }
         );
       }
-      await conn.execute(
-        `UPDATE ${ticketTable} SET data_ultima_actualizare = SYSDATE WHERE ticket_id = :tid`,
-        { tid: ticketId }
-      );
       return { ok: true };
     });
 

@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const statusFilter = searchParams.get("statusFilter") ?? "all";
   const statusNames = searchParams.get("status");
 
-  // Determine user type from session or default to B2C
+  
   const userType = (session.userType || "B2C") as "B2C" | "B2B" | "AGENT";
 
   try {
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
         ? statusNames.split(",").map((n) => n.trim()).filter(Boolean)
         : [];
 
-      // Build bind object for count and select (Oracle named binds)
+      
       const countBinds: Record<string, unknown> = {};
       if (isClient) countBinds.client_id = session.id;
       statusNamesList.forEach((name, i) => {
@@ -54,38 +54,42 @@ export async function GET(request: Request) {
       });
       const pageBinds = { ...countBinds, off: (page - 1) * limit, lim: limit };
 
-      // Count total for current filter
+      
       const countSql =
         `SELECT COUNT(*) AS cnt FROM ${ticketTable} t JOIN Tickly.status s ON s.status_id = t.status_id WHERE ` +
         whereClause;
       const countResult = await conn.execute(countSql, countBinds);
       const filteredTotal = Number((countResult.rows as Record<string, unknown>[])?.[0]?.CNT ?? 0);
 
-      const sql =
-        `SELECT t.ticket_id, t.titlu, t.data_creare, t.data_ultima_actualizare, t.data_rezolvare,
-                s.nume AS status_nume, p.nume AS prioritate_nume, d.nume AS departament_nume,
-                c.email AS client_email,
-                ${userType === "B2C" ? "c.prenume||' '||c.nume" : userType === "B2B" ? "c.denumire" : "c.nume_client"} AS client_nume
-         FROM ${ticketTable} t
-         JOIN Tickly.status s ON s.status_id = t.status_id
-         JOIN Tickly.prioritate p ON p.prioritate_id = t.prioritate_id
-         JOIN Tickly.departament d ON d.departament_id = t.departament_id
-         JOIN ${clientTable} c ON c.client_id = t.client_id
-         WHERE ` +
-        whereClause +
-        ` ORDER BY NVL(t.data_ultima_actualizare, t.data_creare) DESC, t.data_creare DESC
-         OFFSET :off ROWS FETCH NEXT :lim ROWS ONLY`;
+      const sql = `
+    SELECT t.ticket_id, t.titlu, t.data_creare, t.data_rezolvare,
+          s.nume AS status_nume, p.nume AS prioritate_nume, cat.nume AS categorie_nume,
+          c.email AS client_email,
+          -- Dacă e AGENT folosește NUME_CLIENT din V_CLIENT_GLOBAL
+          -- Dacă e B2C/B2B folosește DISPLAY_NAME din view-urile de AUTH
+          ${userType === "AGENT" ? "c.nume_client" : "c.display_name"} AS client_nume
+    FROM ${ticketTable} t
+    JOIN TICKLY.STATUS s ON s.status_id = t.status_id
+    JOIN TICKLY.PRIORITATE p ON p.prioritate_id = t.prioritate_id
+    LEFT JOIN TICKLY.CATEGORIE cat ON cat.categorie_id = t.categorie_id
+    JOIN ${clientTable} c ON c.client_id = t.client_id
+    WHERE ` + whereClause + `
+    ORDER BY t.data_creare DESC
+    OFFSET :off ROWS FETCH NEXT :lim ROWS ONLY`;
+         
       const r = await conn.execute(sql, pageBinds);
       const raw = (r.rows as Record<string, unknown>[]) || [];
+      
       const tickets = raw.map((row) => ({
         ticket_id: row.TICKET_ID,
         titlu: row.TITLU,
         data_creare: row.DATA_CREARE,
-        data_ultima_actualizare: row.DATA_ULTIMA_ACTUALIZARE ?? row.DATA_CREARE,
+        
+        data_ultima_actualizare: row.DATA_CREARE, 
         data_rezolvare: row.DATA_REZOLVARE,
         status_nume: row.STATUS_NUME,
         prioritate_nume: row.PRIORITATE_NUME,
-        departament_nume: row.DEPARTAMENT_NUME,
+        categorie_nume: row.CATEGORIE_NUME, 
         client_email: row.CLIENT_EMAIL,
         client_nume: row.CLIENT_NUME,
       }));
@@ -152,21 +156,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Trebuie să fii autentificat pentru a crea un tichet." }, { status: 401 });
   }
 
-  // Determină tipul de utilizator pentru a ști către ce server trimitem (SV1 - B2C sau SV2 - B2B)
   const userType = (session.userType || "B2C") as "B2C" | "B2B" | "AGENT";
 
-  // Agenții (SV3) nu au rolul de a crea tichete
   if (userType === "AGENT") {
     return NextResponse.json({ error: "Agenții nu pot crea tichete." }, { status: 403 });
   }
 
   try {
     const body = await request.json();
-    const { titlu, descriere, departament_id, prioritate_id, categorie_id } = body;
+    
+    const { titlu, descriere, prioritate_id, categorie_id } = body;
 
-    if (!titlu || !departament_id || !prioritate_id) {
+    if (!titlu || !categorie_id || !prioritate_id) {
       return NextResponse.json(
-        { error: "Te rog completează toate câmpurile obligatorii (Titlu, Departament, Prioritate)." }, 
+        { error: "Te rog completează toate câmpurile obligatorii (Titlu, Categorie, Prioritate)." }, 
         { status: 400 }
       );
     }
@@ -185,11 +188,12 @@ export async function POST(request: Request) {
         throw new Error("Nu s-a găsit niciun status valid (nefinal) în baza de date.");
       }
 
+      
       const sql = `
         INSERT INTO ${ticketTable}
-          (client_id, departament_id, prioritate_id, status_id, categorie_id, titlu, descriere, data_creare)
+          (client_id, prioritate_id, status_id, categorie_id, titlu, descriere, data_creare)
         VALUES 
-          (:client_id, :dep_id, :prio_id, :stat_id, :cat_id, :titlu, :descriere, SYSDATE)
+          (:client_id, :prio_id, :stat_id, :cat_id, :titlu, :descriere, SYSDATE)
         RETURNING ticket_id INTO :new_id
       `;
 
@@ -197,10 +201,9 @@ export async function POST(request: Request) {
 
       const binds = {
         client_id: session.id,
-        dep_id: Number(departament_id),
         prio_id: Number(prioritate_id),
         stat_id: defaultStatusId,
-        cat_id: categorie_id ? Number(categorie_id) : null,
+        cat_id: Number(categorie_id),
         titlu: titlu,
         descriere: cleanBind(descriere), 
         new_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }

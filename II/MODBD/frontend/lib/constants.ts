@@ -5,14 +5,15 @@
 export type UserType = "B2C" | "B2B" | "AGENT";
 
 export const DB_CONFIG = {
-  // B2C instance - sv1
+  
   SV1_B2C: {
     name: "SV1",
     type: "B2C",
     port: 1521,
     pdb: "PDB1",
     tables: {
-      client: "TICKLY.client_fizic",
+      
+      client: "TICKLY.V_CLIENT_FIZIC_AUTH", 
       ticket: "TICKLY.ticket_fizic",
       comment_client: "TICKLY.comment_client_fizic",
       comment_agent: "TICKLY.comment_agent_fizic",
@@ -24,14 +25,15 @@ export const DB_CONFIG = {
     clientIdField: "cnp",
   },
 
-  // B2B instance - sv2
+  
   SV2_B2B: {
     name: "SV2",
     type: "B2B",
     port: 1521,
     pdb: "PDB2",
     tables: {
-      client: "TICKLY.client_juridic",
+      
+      client: "TICKLY.V_CLIENT_JURIDIC_AUTH",
       ticket: "TICKLY.ticket_juridic",
       comment_client: "TICKLY.comment_client_juridic",
       comment_agent: "TICKLY.comment_agent_juridic",
@@ -43,24 +45,24 @@ export const DB_CONFIG = {
     clientIdField: "cui",
   },
 
-  // Security instance - sv3
-  SV3_SECURITY: {
-    name: "SV3",
+  
+  SV3_SECURITY: { 
+    name: "SV1_AGENT_HUB",
     type: "AGENT",
     port: 1521,
-    pdb: "PDB3",
+    pdb: "PDB1", 
     tables: {
-      agent_sec: "TICKLY.agent_sec",
-      ticket: "TICKLY.v_ticket",
-      client: "TICKLY.v_client",
-      comment_client: "TICKLY.v_comment_client",
-      comment_agent: "TICKLY.v_comment_agent",
-      ticket_history: "TICKLY.v_ticket_history",
-      ticket_agent: "TICKLY.v_ticket_agent",
+      agent_sec: "TICKLY.V_AGENT_AUTH", 
+      ticket: "TICKLY.V_TICKET_AGENT", 
+      client: "TICKLY.V_CLIENT_GLOBAL",
+      comment_client: "TICKLY.comment_client_fizic",
+      comment_agent: "TICKLY.comment_agent_fizic",
+      ticket_history: "TICKLY.ticket_history_fizic",
+      ticket_agent: "TICKLY.ticket_agent_fizic",
     },
   },
 
-  // Template/Reference instance - sv4
+  
   SV4_TEMPLATE: {
     name: "SV4",
     type: "REFERENCE",
@@ -77,25 +79,15 @@ export const DB_CONFIG = {
   },
 };
 
-/**
- * Get appropriate DB config based on user type
- */
 export function getDbConfigByUserType(userType: UserType) {
   switch (userType) {
-    case "B2C":
-      return DB_CONFIG.SV1_B2C;
-    case "B2B":
-      return DB_CONFIG.SV2_B2B;
-    case "AGENT":
-      return DB_CONFIG.SV3_SECURITY;
-    default:
-      return DB_CONFIG.SV1_B2C; // default to B2C
+    case "B2C": return DB_CONFIG.SV1_B2C;
+    case "B2B": return DB_CONFIG.SV2_B2B;
+    case "AGENT": return DB_CONFIG.SV3_SECURITY;
+    default: return DB_CONFIG.SV1_B2C;
   }
 }
 
-/**
- * Get table name based on user type and table type
- */
 export function getTableName(userType: UserType, tableType: string): string {
   const config = getDbConfigByUserType(userType);
   return (config.tables as Record<string, string>)[tableType] || "";

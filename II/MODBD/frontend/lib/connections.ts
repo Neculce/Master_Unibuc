@@ -13,14 +13,14 @@ function getConnectionConfig(userType: UserType) {
   
   let envConnectString = process.env.ORACLE_CONNECT_STRING;
 
-  // Route the connection to the correct server based on user profile
+  
   if (userType === "B2C" && process.env.ORACLE_CONNECT_STRING_SV1) {
     envConnectString = process.env.ORACLE_CONNECT_STRING_SV1;
     
   } else if (userType === "B2B" && process.env.ORACLE_CONNECT_STRING_SV2) {
     envConnectString = process.env.ORACLE_CONNECT_STRING_SV2;
-  } else if (userType === "AGENT" && process.env.ORACLE_CONNECT_STRING_SV3) {
-    envConnectString = process.env.ORACLE_CONNECT_STRING_SV3;
+  } else if (userType === "AGENT" && process.env.ORACLE_CONNECT_STRING_SV1) {
+    envConnectString = process.env.ORACLE_CONNECT_STRING_SV1;
   }
 
   const connectString = envConnectString || `localhost:${dbConfig.port}/${dbConfig.pdb}`;
@@ -44,7 +44,7 @@ export async function getConnectionByUserType(userType: UserType): Promise<Conne
  * Get default connection (B2C for initial login queries)
  */
 export async function getDefaultConnection(): Promise<Connection> {
-  const config = getConnectionConfig("B2C");
+  const config = getConnectionConfig("AGENT");
   return oracledb.getConnection(config);
 }
 

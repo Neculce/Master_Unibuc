@@ -24,27 +24,34 @@ export async function GET() {
 
   try {
     const result = await runQuery(async (conn) => {
-      const [statusRows, prioritateRows, departamentRows, categorieRows, agentRows] = await Promise.all([
-        conn.execute("SELECT status_id, nume FROM Tickly.status ORDER BY status_id"),
-        conn.execute("SELECT prioritate_id, nume FROM Tickly.prioritate ORDER BY nivel"),
-        conn.execute("SELECT departament_id, nume FROM Tickly.departament ORDER BY nume"),
-        conn.execute("SELECT categorie_id, nume FROM Tickly.categorie ORDER BY nume"),
-        conn.execute("SELECT agent_id, prenume, nume, email FROM Tickly.agent_profil WHERE is_active = 'Y' ORDER BY nume, prenume"),
+      
+      const [statusRows, prioritateRows, categorieRows, agentRows, deptRows] = await Promise.all([
+        conn.execute("SELECT status_id, nume FROM TICKLY.STATUS ORDER BY status_id"),
+        conn.execute("SELECT prioritate_id, nume FROM TICKLY.PRIORITATE ORDER BY prioritate_id"),
+        conn.execute("SELECT categorie_id, nume FROM TICKLY.CATEGORIE ORDER BY nume"),
+        conn.execute(`
+          SELECT p.agent_id, p.prenume, p.nume, s.email 
+          FROM TICKLY.agent_profil p
+          JOIN TICKLY.agent_sec@LINK_SV3 s ON p.agent_id = s.agent_id
+          WHERE s.is_active = 'Y' 
+          ORDER BY p.nume, p.prenume
+        `),
+        
+        conn.execute("SELECT departament_id, nume FROM TICKLY.DEPARTAMENT ORDER BY nume"),
       ]);
 
-      const map = (rows: unknown[], idKey: string, labelKey: string) =>
-        (rows as Record<string, unknown>[]).map((r) => ({
+      const map = (rows: any[], idKey: string, labelKey: string) =>
+        rows.map((r) => ({
           id: Number(r[idKey]),
           nume: toJsonSafe(r[labelKey]) as string,
         }));
 
-      const agents = (agentRows.rows as Record<string, unknown>[]) || [];
       return {
-        statuses: map(statusRows.rows as Record<string, unknown>[], "STATUS_ID", "NUME"),
-        priorities: map(prioritateRows.rows as Record<string, unknown>[], "PRIORITATE_ID", "NUME"),
-        departments: map(departamentRows.rows as Record<string, unknown>[], "DEPARTAMENT_ID", "NUME"),
-        categories: map(categorieRows.rows as Record<string, unknown>[], "CATEGORIE_ID", "NUME"),
-        agents: agents.map((a) => ({
+        statuses: map(statusRows.rows as any[], "STATUS_ID", "NUME"),
+        priorities: map(prioritateRows.rows as any[], "PRIORITATE_ID", "NUME"),
+        categories: map(categorieRows.rows as any[], "CATEGORIE_ID", "NUME"),
+        departments: map(deptRows.rows as any[], "DEPARTAMENT_ID", "NUME"), 
+        agents: (agentRows.rows as any[]).map((a) => ({
           id: Number(a.AGENT_ID),
           nume: `${toJsonSafe(a.PRENUME)} ${toJsonSafe(a.NUME)}`,
           email: toJsonSafe(a.EMAIL) as string,

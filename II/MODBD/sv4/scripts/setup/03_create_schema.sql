@@ -43,7 +43,7 @@ CREATE TABLE TICKLY.kb_article (
     agent_id NUMBER NOT NULL,
     categorie_id NUMBER,
     titlu VARCHAR2(200) NOT NULL,
-    content CLOB NOT NULL,
+    content VARCHAR2(4000) NOT NULL,
     keywords VARCHAR2(500),
     vizualizari NUMBER DEFAULT 0,
     rating_mediu NUMBER(3,2),

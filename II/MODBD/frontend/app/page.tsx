@@ -11,7 +11,7 @@ type Ticket = {
   data_rezolvare: string | null;
   status_nume: string;
   prioritate_nume: string;
-  departament_nume: string;
+  categorie_nume: string; 
   client_email: string;
   client_nume: string | null;
 };
@@ -91,7 +91,7 @@ export default function DashboardPage() {
 
   const isTicketClosed = (t: Ticket) => statusNumeToFinal.get(t.status_nume) === true;
 
-  // Build API query
+  
   const ticketsQuery = (() => {
     const params = new URLSearchParams();
     params.set("stats", "true");
@@ -285,7 +285,7 @@ export default function DashboardPage() {
                   <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Client</th>
                 )}
                 {isAgent && (
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Departament</th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Categorie</th>
                 )}
                 {!isAgent && (
                   <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Stare</th>
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                       <td className="px-6 py-4 text-sm text-gray-600">{t.client_nume || t.client_email}</td>
                     )}
                     {isAgent && (
-                      <td className="px-6 py-4 text-sm text-gray-600">{t.departament_nume}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{t.categorie_nume}</td>
                     )}
                     {!isAgent && (
                       <td className="px-6 py-4">

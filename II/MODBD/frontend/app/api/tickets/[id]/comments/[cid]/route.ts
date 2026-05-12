@@ -19,7 +19,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Determine user type from session or default to B2C
+  
   const userType = (session.userType || "B2C") as "B2C" | "B2B" | "AGENT";
 
   const match = /^(client|agent)-(\d+)$/.exec(cidRaw.trim());
@@ -49,20 +49,25 @@ export async function PATCH(
 
   try {
     const updateResult = await runQueryByUserType(userType, async (conn) => {
-      const commentClientTable = getTableName(userType, "comment_client");
-      const commentAgentTable = getTableName(userType, "comment_agent");
-      const ticketTable = getTableName(userType, "ticket");
-
       if (source === "client") {
+        const commentClientTable = getTableName(userType, "comment_client");
         return await conn.execute(
           `UPDATE ${commentClientTable} SET content = :content
-           WHERE comment_id = :comment_id AND ticket_id = :ticket_id AND client_id = :client_id`,
+          WHERE comment_id = :comment_id AND ticket_id = :ticket_id AND client_id = :client_id`,
           { content, comment_id: commentId, ticket_id: ticketId, client_id: session.id }
         );
       } else {
+        
+        const ticketCheck = await conn.execute(
+          `SELECT tip_client FROM TICKLY.V_TICKET_AGENT WHERE ticket_id = :id`,
+          [ticketId]
+        );
+        const tip = (ticketCheck.rows as any[])?.[0]?.TIP_CLIENT;
+        const targetTable = (tip === "JURIDIC") ? "TICKLY.comment_agent_juridic@LINK_SV2" : "TICKLY.comment_agent_fizic";
+
         return await conn.execute(
-          `UPDATE ${commentAgentTable} SET content = :content
-           WHERE comment_id = :comment_id AND ticket_id = :ticket_id AND agent_id = :agent_id`,
+          `UPDATE ${targetTable} SET content = :content
+          WHERE comment_id = :comment_id AND ticket_id = :ticket_id AND agent_id = :agent_id`,
           { content, comment_id: commentId, ticket_id: ticketId, agent_id: session.id }
         );
       }
@@ -72,14 +77,6 @@ export async function PATCH(
     if (!updated) {
       return NextResponse.json({ error: "Comment not found or you cannot edit it" }, { status: 404 });
     }
-
-    await runQueryByUserType(userType, async (conn) => {
-      const ticketTable = getTableName(userType, "ticket");
-      await conn.execute(
-        `UPDATE ${ticketTable} SET data_ultima_actualizare = SYSDATE WHERE ticket_id = :tid`,
-        { tid: ticketId }
-      );
-    });
 
     return NextResponse.json({ ok: true });
   } catch (e) {

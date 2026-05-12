@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-// 1. Definim tipul pentru props
+
 type NavProps = {
   user?: {
     id: number;
@@ -13,13 +13,13 @@ type NavProps = {
   } | null;
 };
 
-// 2. Destructurăm 'user' din props
+
 export function Nav({ user }: NavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const isLogin = pathname === "/login";
 
-  // 3. Verificăm dacă este agent
+  
   const isAgent = user?.role === "agent";
 
   if (isLogin) return null;

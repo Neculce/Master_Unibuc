@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/sv1/scripts/setup/07_sync_replicated_relations.sql" value="88a49678-18e2-4fbd-a3d6-8ecea025e78a" />
+    <file url="file://$PROJECT_DIR$/sv1/scripts/setup/08_optimization_query.sql" value="88a49678-18e2-4fbd-a3d6-8ecea025e78a" />
+    <file url="file://$PROJECT_DIR$/sv2/scripts/setup/07_sync_replicated_relations.sql" value="daf8b727-58ef-42fe-ab94-a6cfbe01434f" />
+    <file url="file://$PROJECT_DIR$/sv3/scripts/setup/07_sync_replicated_relations.sql" value="51503a73-cef4-4c6a-ab53-fabcc378fe70" />
+    <file url="file://$PROJECT_DIR$/sv4/scripts/setup/04_insert.sql" value="51816651-1adb-4bc3-9a56-f5bff468bb6b" />
+  </component>
+</project>

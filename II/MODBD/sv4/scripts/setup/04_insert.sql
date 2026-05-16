@@ -60,3 +60,8 @@ INSERT INTO TICKLY.TAG (NUME, CULOARE, DESCRIERE)
 VALUES ('bug', '#FF6600', 'Defect confirmat');
 
 COMMIT;
+
+INSERT INTO TICKLY.STATUS (NUME, DESCRIERE, ESTE_FINAL)
+VALUES ('Escaladat', 'Ticket trimis catre suport avansat', 'N');
+
+COMMIT;

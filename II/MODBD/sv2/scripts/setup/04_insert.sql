@@ -67,3 +67,8 @@ BEGIN
     COMMIT;
 END;
 /
+
+-- pentru a verifica integritatea globala
+UPDATE TICKLY.ticket_juridic
+SET status_id = 999999
+WHERE ROWNUM = 1;

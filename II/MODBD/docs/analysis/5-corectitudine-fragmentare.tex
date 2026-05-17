@@ -1,0 +1,32 @@
+Am verificat corectitudinea fragmentarii analizand cele trei reguli fundamentale prezentate la curs:
+completitudine, reconstructie, disjunctie.
+
+1. Verificare completitudinii
+Presupune ca fiecare tuplu din relatia initiala sa se regaseasca in cel putin unul din fragmentele obtinute
+
+Relatia CLIENT a fost fragmentata in functie de tipul clientului astfel:
+Clientii care au atributul client_type setat la valoarea 'F' -> CLIENT_FIZIC
+Clientii care au atributul client_type setat la valoarea 'J' -> CLIENT_JURIDIC
+
+Constrangerea CHECK (client_type IN ('F', 'J')) ne asigura ca fiecare client apartine obligatoriu unuia
+din cele doua fragmente
+
+2. Verificarea reconstructiei
+Permite obtinerea relatiei initiale fara pierdere de informatie din fragmentele rezultate
+
+Pentru fragmentarea orizontala reconstructia se face prin reuniune:
+
+CLIENT = CLIENT_FIZIC UNION ALL CLIENT_JURIDIC;
+
+Este asigurata prin view-uri globale (V_TICKET_AGENT), reunind fragmentele si permitand aplicatiei sa
+acceseze datele ca pe o singura relatie logica
+
+Pentru fragmentarea verticala reconstructia se face prin join pe cheia primara comuna. Daca informatiile
+despre client sunt impartite in date generale si specifice, relatia poate fi refacuta prin join pe client_id
+
+3. Verificarea disjunctiei
+Daca acelasi tuplu nu apare simultan in mai multe fragmente (cu exceptia atributelor cheie necesare
+reconstructiei fragmentarii verticale) atunci fragmentarea este disjuncta
+
+Fragmentele CLIENT_FIZIC si CLIENT_JURIDIC sunt disjuncte deoarece un client nu poate avea simultan
+client_type = 'F' si client_type = 'J'
